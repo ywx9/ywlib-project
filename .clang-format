@@ -1,0 +1,23 @@
+AccessModifierOffset: -2
+AlignAfterOpenBracket: AlwaysBreak
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: Consecutive
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortCompoundRequirementOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortNamespacesOnASingleLine: true
+BreakBeforeConceptDeclarations: Allowed
+BreakInheritanceList: AfterColon
+BreakTemplateDeclarations: Leave
+ColumnLimit: 0
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+EmptyLineBeforeAccessModifier: Leave
+FixNamespaceComments: false
+LambdaBodyIndentation: OuterScope
+PointerAlignment: Left
+RequiresClausePosition: SingleLine
+SpaceAfterTemplateKeyword: false

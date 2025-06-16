@@ -1,0 +1,13 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/ywlib",
+        "${workspaceFolder}/ywlib/inc",
+        "${workspaceFolder}/ywlib/std"
+      ]
+    }
+  ],
+  "version": 4
+}

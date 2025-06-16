@@ -1,0 +1,14 @@
+#pragma once
+#include <inc/vcruntime.h>
+
+#define va_start(ap, x) ((void)(__ywlib_va_check<decltype(x)>(), __va_start(&ap, x)))
+#define va_arg(ap, t) ((sizeof(t) > 8 || (sizeof(t) & (sizeof(t) - 1)) != 0) ? **(t**)((ap += 8) - 8) : *(t*)((ap += 8) - 8))
+#define va_end(ap) ((void)(ap = (va_list)0))
+#define va_copy(dest, src) ((dest) = (src))
+
+#ifndef __ywlib_import
+template<typename T> struct __ywlib_va_check {
+  static_assert(!__ywlib_is_reference<T>);
+};
+export extern "C" void __cdecl __va_start(va_list*, ...);
+#endif

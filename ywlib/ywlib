@@ -1,0 +1,132 @@
+#pragma once
+
+#include <inc/cassert>
+#include <inc/cctype>
+#include <inc/cerrno>
+#include <inc/cfenv>
+#include <inc/cfloat>
+#include <inc/cinttypes>
+#include <inc/climits>
+#include <inc/clocale>
+#include <inc/cmath>
+#include <inc/csetjmp>
+#include <inc/csignal>
+#include <inc/cstdarg>
+#include <inc/cstddef>
+#include <inc/cstdint>
+#include <inc/cstdio>
+#include <inc/cstdlib>
+#include <inc/cstring>
+#include <inc/ctime>
+#include <inc/cuchar>
+#include <inc/cwchar>
+#include <inc/cwctype>
+
+#include <inc/immintrin.h>
+
+#include <inc/windows.h>
+#include <inc/d2d1_1.h>
+#include <inc/d3d11.h>
+#include <inc/dwrite_1.h>
+#include <inc/dxgi1_2.h>
+
+#ifndef __ywlib_import
+#include <std/algorithm>
+#include <std/any>
+#include <std/array>
+#include <std/atomic>
+#include <std/bitset>
+#include <std/charconv>
+#include <std/chrono>
+#include <std/compare>
+#include <std/complex>
+#include <std/concepts>
+#include <std/condition_variable>
+#include <std/coroutine>
+#include <std/deque>
+#include <std/exception>
+#include <std/execution>
+#include <std/filesystem>
+#include <std/format>
+#include <std/forward_list>
+#include <std/fstream>
+#include <std/functional>
+#include <std/future>
+#include <std/initializer_list>
+#include <std/iomanip>
+#include <std/ios>
+#include <std/iosfwd>
+#include <std/iostream>
+#include <std/istream>
+#include <std/iterator>
+#include <std/latch>
+#include <std/limits>
+#include <std/list>
+#include <std/locale>
+#include <std/map>
+#include <std/mdspan>
+#include <std/memory>
+#include <std/memory_resource>
+#include <std/mutex>
+#include <std/new>
+#include <std/numbers>
+#include <std/numeric>
+#include <std/optional>
+#include <std/ostream>
+#include <std/print>
+#include <std/queue>
+#include <std/random>
+#include <std/ranges>
+#include <std/ratio>
+#include <std/regex>
+#include <std/scoped_allocator>
+#include <std/semaphore>
+#include <std/set>
+#include <std/shared_mutex>
+#include <std/source_location>
+#include <std/span>
+#include <std/spanstream>
+#include <std/sstream>
+#include <std/stack>
+#include <std/stacktrace>
+#include <std/stdexcept>
+#include <std/stdfloat>
+#include <std/stop_token>
+#include <std/streambuf>
+#include <std/string>
+#include <std/string_view>
+#include <std/syncstream>
+#include <std/system_error>
+#include <std/thread>
+#include <std/tuple>
+#include <std/type_traits>
+#include <std/typeindex>
+#include <std/typeinfo>
+#include <std/unordered_map>
+#include <std/unordered_set>
+#include <std/utility>
+#include <std/valarray>
+#include <std/variant>
+#include <std/vector>
+#else
+import ywlib;
+#pragma comment(lib, "comdlg32.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dwrite.lib")
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "kernel32.lib")
+#pragma comment(lib, "libcpmt.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "winmm.lib")
+#endif
+
+namespace yw {
+
+
+
+}

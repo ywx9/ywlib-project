@@ -1,0 +1,13 @@
+#pragma once
+
+#ifdef NDEBUG
+#define assert(expression) ((void)0)
+#else
+#define __ywlib_widen_(x) L##x
+#define __ywlib_widen(x) __ywlib_widen_(x)
+#define assert(expression) ((void)(!expression && (::_wassert(L#expression, __ywlib_widen(__FILE__), __LINE__), 0)))
+#endif
+
+#ifndef __ywlib_import
+export extern "C" void __cdecl _wassert(const wchar_t *_Message, const wchar_t *_File, int _Line);
+#endif

@@ -1,0 +1,73 @@
+#pragma once
+#include <inc/vcruntime.h>
+
+#define CLOCKS_PER_SEC ((clock_t)1000)
+
+#ifndef __ywlib_import
+namespace std {
+using __time64_t = long long;
+}
+#ifndef __ywlib_export
+namespace std {
+using clock_t = long;
+using size_t = unsigned long long;
+using time_t = long long;
+struct timespec {
+  time_t tv_sec;
+  long tv_nsec;
+};
+
+clock_t __cdecl clock();
+char* __cdecl asctime(const tm* timeptr);
+size_t __cdecl strftime(char* s, size_t maxsize, const char* format, const tm* timeptr);
+
+char* __cdecl ctime(const time_t* timer);
+double __cdecl difftime(time_t time1, time_t time0);
+tm* __cdecl gmtime(const time_t* timer);
+tm* __cdecl localtime(const time_t* timer);
+time_t __cdecl mktime(tm* timeptr);
+time_t __cdecl time(time_t* timer);
+int __cdecl timespec_get(timespec* ts, int base);
+} // namespace std
+#else
+extern "C" {
+using clock_t = long;
+using size_t = unsigned long long;
+using time_t = long long;
+struct timespec {
+  time_t tv_sec;
+  long tv_nsec;
+};
+
+clock_t __cdecl clock();
+char* __cdecl asctime(const tm* timeptr);
+size_t __cdecl strftime(char* s, size_t maxsize, const char* format, const tm* timeptr);
+
+char* __cdecl _ctime64(const time_t* timer);
+double __cdecl _difftime64(time_t time1, time_t time0);
+tm* __cdecl _gmtime64(const time_t* timer);
+tm* __cdecl _localtime64(const time_t* timer);
+time_t __cdecl _mktime64(tm* timeptr);
+time_t __cdecl _time64(time_t* timer);
+int __cdecl _timespec_get64(timespec* ts, int base);
+}
+export namespace std {
+using ::clock_t;
+using ::size_t;
+using ::time_t;
+using ::timespec;
+
+using ::asctime;
+using ::clock;
+using ::strftime;
+
+inline char* __cdecl ctime(const time_t* timer) { return ::_ctime64(timer); }
+inline double __cdecl difftime(time_t time1, time_t time0) { return ::_difftime64(time1, time0); }
+inline tm* __cdecl gmtime(const time_t* timer) { return ::_gmtime64(timer); }
+inline tm* __cdecl localtime(const time_t* timer) { return ::_localtime64(timer); }
+inline time_t __cdecl mktime(tm* timeptr) { return ::_mktime64(timeptr); }
+inline time_t __cdecl time(time_t* timer) { return ::_time64(timer); }
+inline int __cdecl timespec_get(timespec* ts, int base) { return ::_timespec_get64(ts, base); }
+} // namespace std
+#endif
+#endif

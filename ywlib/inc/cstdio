@@ -1,0 +1,198 @@
+#pragma once
+#include <inc/cstdarg>
+#include <inc/vcruntime.h>
+
+#define _IOFBF 0x0000
+#define _IOLBF 0x0040
+#define _IONBF 0x0004
+#define BUFSIZ 512
+#define EOF (-1)
+#define FOPEN_MAX 20
+#define FILENAME_MAX 260
+#define L_tmpnam 260
+#define SEEK_CUR 1
+#define SEEK_END 2
+#define SEEK_SET 0
+#define TMP_MAX 2147483647
+
+#ifndef __ywlib_import
+#ifndef __ywlib_export
+namespace std {
+using size_t = uint64_t;
+using fpos_t = int64_t;
+
+int __cdecl remove(const char* filename);
+int __cdecl rename(const char* old_p, const char* new_p);
+FILE* __cdecl tmpfile();
+char* __cdecl tmpnam(char* s);
+int __cdecl fclose(FILE* stream);
+int __cdecl fflush(FILE* stream);
+FILE* __cdecl fopen(const char* filename, const char* mode);
+FILE* __cdecl freopen(const char* filename, const char* mode, FILE* stream);
+void __cdecl setbuf(FILE* stream, char* buf);
+int __cdecl setvbuf(FILE* stream, char* buf, int mode, size_t size);
+int __cdecl fgetc(FILE* stream);
+char* __cdecl fgets(char* s, int n, FILE* stream);
+int __cdecl fputc(int c, FILE* stream);
+int __cdecl fputs(const char* s, FILE* stream);
+int __cdecl getc(FILE* stream);
+int __cdecl getchar();
+int __cdecl putc(int c, FILE* stream);
+int __cdecl putchar(int c);
+int __cdecl puts(const char* s);
+int __cdecl ungetc(int c, FILE* stream);
+size_t __cdecl fread(void* ptr, size_t size, size_t nmemb, FILE* stream);
+size_t __cdecl fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream);
+int __cdecl fgetpos(FILE* stream, fpos_t* pos);
+int __cdecl fseek(FILE* stream, long int offset, int whence);
+int __cdecl fsetpos(FILE* stream, const fpos_t* pos);
+long int __cdecl ftell(FILE* stream);
+void __cdecl rewind(FILE* stream);
+void __cdecl clearerr(FILE* stream);
+int __cdecl feof(FILE* stream);
+int __cdecl ferror(FILE* stream);
+void __cdecl perror(const char* s);
+} // namespace std
+#else
+extern "C" {
+using size_t = uint64_t;
+using fpos_t = int64_t;
+
+int __cdecl remove(const char* filename);
+int __cdecl rename(const char* old_p, const char* new_p);
+FILE* __cdecl tmpfile();
+char* __cdecl tmpnam(char* s);
+int __cdecl fclose(FILE* stream);
+int __cdecl fflush(FILE* stream);
+FILE* __cdecl fopen(const char* filename, const char* mode);
+FILE* __cdecl freopen(const char* filename, const char* mode, FILE* stream);
+void __cdecl setbuf(FILE* stream, char* buf);
+int __cdecl setvbuf(FILE* stream, char* buf, int mode, size_t size);
+int __cdecl fgetc(FILE* stream);
+char* __cdecl fgets(char* s, int n, FILE* stream);
+int __cdecl fputc(int c, FILE* stream);
+int __cdecl fputs(const char* s, FILE* stream);
+int __cdecl getc(FILE* stream);
+int __cdecl getchar();
+int __cdecl putc(int c, FILE* stream);
+int __cdecl putchar(int c);
+int __cdecl puts(const char* s);
+int __cdecl ungetc(int c, FILE* stream);
+size_t __cdecl fread(void* ptr, size_t size, size_t nmemb, FILE* stream);
+size_t __cdecl fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream);
+int __cdecl fgetpos(FILE* stream, fpos_t* pos);
+int __cdecl fseek(FILE* stream, long int offset, int whence);
+int __cdecl fsetpos(FILE* stream, const fpos_t* pos);
+long int __cdecl ftell(FILE* stream);
+void __cdecl rewind(FILE* stream);
+void __cdecl clearerr(FILE* stream);
+int __cdecl feof(FILE* stream);
+int __cdecl ferror(FILE* stream);
+void __cdecl perror(const char* s);
+}
+export namespace std {
+using ::fpos_t;
+using ::size_t;
+
+using ::clearerr;
+using ::fclose;
+using ::feof;
+using ::ferror;
+using ::fflush;
+using ::fgetc;
+using ::fgetpos;
+using ::fgets;
+using ::fopen;
+using ::fputc;
+using ::fputs;
+using ::fread;
+using ::freopen;
+using ::fseek;
+using ::fsetpos;
+using ::ftell;
+using ::fwrite;
+using ::getc;
+using ::getchar;
+using ::perror;
+using ::putc;
+using ::putchar;
+using ::puts;
+using ::remove;
+using ::rename;
+using ::rewind;
+using ::setbuf;
+using ::setvbuf;
+using ::tmpfile;
+using ::tmpnam;
+using ::ungetc;
+} // namespace std
+#endif
+extern "C" int __cdecl __stdio_common_vfprintf(uint64_t Options, FILE* Stream, const char* Format, _locale_t, va_list Args);
+export namespace std {
+inline int __cdecl vfprintf(FILE* Stream, const char* Format, va_list Args) { return __stdio_common_vfprintf(_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS, Stream, Format, nullptr, Args); }
+inline int __cdecl vprintf(const char* Format, va_list Args) { return vfprintf(stdout, Format, Args); }
+inline int __cdecl fprintf(FILE* Stream, const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = vfprintf(Stream, Format, args);
+  va_end(args);
+  return result;
+}
+inline int __cdecl printf(const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = vprintf(Format, args);
+  va_end(args);
+  return result;
+}
+} // namespace std
+
+extern "C" int __cdecl __stdio_common_vfprintf_s(uint64_t Options, FILE* Stream, const char* Format, _locale_t, va_list Args);
+export namespace std {
+inline int __cdecl vfprintf_s(FILE* Stream, const char* Format, va_list Args) { return __stdio_common_vfprintf_s(_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS, Stream, Format, nullptr, Args); }
+inline int __cdecl vprintf_s(const char* Format, va_list Args) { return vfprintf_s(stdout, Format, Args); }
+inline int __cdecl fprintf_s(FILE* Stream, const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = vfprintf_s(Stream, Format, args);
+  va_end(args);
+  return result;
+}
+inline int __cdecl printf_s(const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = vprintf_s(Format, args);
+  va_end(args);
+  return result;
+}
+} // namespace std
+
+extern "C" int __cdecl __stdio_common_vsprintf(uint64_t Options, char* Buffer, size_t BufferCount, char const* Format, _locale_t Locale, va_list Args);
+export namespace std {
+inline int __cdecl vsprintf_s(char* Buffer, size_t BufferCount, const char* Format, va_list Args) {
+  const int result = __stdio_common_vsprintf(_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS, Buffer, BufferCount, Format, nullptr, Args);
+  return result < 0 ? -1 : result;
+}
+inline int __cdecl sprintf_s(char* Buffer, size_t BufferCount, const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = vsprintf_s(Buffer, BufferCount, Format, args);
+  va_end(args);
+  return result;
+}
+inline int __cdecl _vscprintf(const char* Format, va_list Args) {
+  const int result = __stdio_common_vsprintf(_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS | _CRT_INTERNAL_PRINTF_STANDARD_SNPRINTF_BEHAVIOR, nullptr, 0, Format, nullptr, Args);
+  return result < 0 ? -1 : result;
+}
+inline int __cdecl _scprintf(const char* Format, ...) {
+  va_list args;
+  va_start(args, Format);
+  int result = _vscprintf(Format, args);
+  va_end(args);
+  return result;
+}
+} // namespace std
+extern "C" int __cdecl __stdio_common_vsprintf_s(uint64_t Options, char* Buffer, size_t BufferCount, char const* Format, _locale_t Locale, va_list Args);
+extern "C" int __cdecl __stdio_common_vsnprintf_s(uint64_t Options, char* Buffer, size_t BufferCount, size_t MaxCount, char const* Format, _locale_t Locale, va_list Args);
+
+#endif

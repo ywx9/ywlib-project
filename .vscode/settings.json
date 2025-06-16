@@ -1,0 +1,17 @@
+{
+  "files.exclude": {},
+  "search.exclude": {},
+  "files.associations": {
+    "*": "cpp",
+    "*.bat": "bat",
+    "*.json": "json",
+    "*.md": "markdown",
+    "*.py": "python",
+    ".gitignore": "yaml",
+    ".clang-format": "yaml",
+    "LICENSE": "plaintext"
+  },
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false,
+  }
+}

@@ -1,0 +1,86 @@
+#pragma once
+
+#define E2BIG 7
+#define EACCES 13
+#define EADDRINUSE 100
+#define EADDRNOTAVAIL 101
+#define EAFNOSUPPORT 102
+#define EAGAIN 11
+#define EALREADY 103
+#define EBADF 9
+#define EBADMSG 104
+#define EBUSY 16
+#define ECHILD 10
+#define ECANCELED 105
+#define ECONNABORTED 106
+#define ECONNREFUSED 107
+#define ECONNRESET 108
+#define EDEADLK 36
+#define EDESTADDRREQ 109
+#define EDOM 33
+#define EEXIST 17
+#define EFAULT 14
+#define EFBIG 27
+#define EHOSTUNREACH 110
+#define EIDRM 111
+#define EILSEQ 42
+#define EINPROGRESS 112
+#define EINTR 4
+#define EINVAL 22
+#define EIO 5
+#define EISCONN 113
+#define EISDIR 21
+#define ELOOP 114
+#define EMFILE 24
+#define EMLINK 31
+#define EMSGSIZE 115
+#define ENAMETOOLONG 38
+#define ENETDOWN 116
+#define ENETRESET 117
+#define ENETUNREACH 118
+#define ENFILE 23
+#define ENOBUFS 119
+#define ENODEV 19
+#define ENOENT 2
+#define ENOEXEC 8
+#define ENOLCK 39
+#define ENOLINK 121
+#define ENOMEM 12
+#define ENOMSG 122
+#define ENOPROTOOPT 123
+#define ENOSPC 28
+#define ENOSYS 40
+#define ENOTCONN 126
+#define ENOTDIR 20
+#define ENOTEMPTY 41
+#define ENOTRECOVERABLE 127
+#define ENOTSOCK 128
+#define ENOTSUP 129
+#define ENOTTY 25
+#define ENXIO 6
+#define EOPNOTSUPP 130
+#define EOVERFLOW 132
+#define EOWNERDEAD 133
+#define EPERM 1
+#define EPIPE 32
+#define EPROTO 134
+#define EPROTONOSUPPORT 135
+#define EPROTOTYPE 136
+#define ERANGE 34
+#define EROFS 30
+#define ESPIPE 29
+#define ESRCH 3
+#define ETIMEDOUT 138
+#define ETXTBSY 139
+#define EWOULDBLOCK 140
+#define EXDEV 18
+
+#define errno (*::_errno())
+
+#ifndef __ywlib_import
+using errno_t = int;
+export extern "C" errno_t* __cdecl _errno();
+export namespace std {
+using ::errno_t;
+}
+#endif

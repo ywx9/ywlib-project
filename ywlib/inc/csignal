@@ -1,0 +1,36 @@
+#pragma once
+
+#define SIG_DFL ((void(__cdecl*)(int))0)
+#define SIG_ERR ((void(__cdecl*)(int)) - 1)
+#define SIG_IGN ((void(__cdecl*)(int))1)
+
+#define SIGABRT 22
+#define SIGFPE 8
+#define SIGILL 4
+#define SIGINT 2
+#define SIGSEGV 11
+#define SIGTERM 15
+
+#ifndef __ywlib_import
+#ifndef __ywlib_export
+namespace std {
+using sig_atomic_t = int;
+using signal_handler = void(__cdecl)(int);
+signal_handler* __cdecl signal(int _Signal, signal_handler* _Function);
+int __cdecl raise(int _Signal);
+}
+#else
+extern "C" {
+using sig_atomic_t = int;
+using signal_handler = void(__cdecl)(int);
+signal_handler* __cdecl signal(int _Signal, signal_handler* _Function);
+int __cdecl raise(int _Signal);
+}
+export namespace std {
+using ::signal_handler;
+using ::sig_atomic_t;
+using ::signal;
+using ::raise;
+}
+#endif
+#endif

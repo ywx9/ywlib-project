@@ -1,0 +1,190 @@
+#pragma once
+#include <inc/vcruntime.h>
+
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
+#define RAND_MAX 0x7fff
+#define MB_CUR_MAX (::___mb_cur_max_func())
+
+#ifndef __ywlib_import
+export extern "C" int __cdecl ___mb_cur_max_func();
+#ifndef __ywlib_export
+namespace std {
+
+using size_t = unsigned long long;
+struct div_t {
+  int quot, rem;
+};
+struct ldiv_t {
+  long int quot, rem;
+};
+struct lldiv_t {
+  long long int quot, rem;
+};
+
+[[noreturn]] void __cdecl abort();
+[[noreturn]] void __cdecl exit(int status);
+[[noreturn]] void __cdecl _Exit(int status);
+[[noreturn]] void __cdecl quick_exit(int status);
+int __cdecl atexit(void(__cdecl* func)());
+int __cdecl at_quick_exit(void(__cdecl* func)());
+
+char* __cdecl getenv(const char* name);
+int __cdecl system(const char* string);
+int __cdecl _wsystem(const wchar_t*);
+
+void __cdecl free(void* ptr);
+void* __cdecl malloc(size_t size);
+void* __cdecl calloc(size_t nmemb, size_t size);
+void* __cdecl realloc(void* ptr, size_t size);
+
+int __cdecl atoi(const char* nptr);
+long int __cdecl atol(const char* nptr);
+long long int __cdecl atoll(const char* nptr);
+double __cdecl atof(const char* nptr);
+
+long int __cdecl strtol(const char* nptr, char** endptr, int base);
+long long int __cdecl strtoll(const char* nptr, char** endptr, int base);
+unsigned long int __cdecl strtoul(const char* nptr, char** endptr, int base);
+unsigned long long int __cdecl strtoull(const char* nptr, char** endptr, int base);
+float __cdecl strtof(const char* nptr, char** endptr);
+double __cdecl strtod(const char* nptr, char** endptr);
+long double __cdecl strtold(const char* nptr, char** endptr);
+
+int __cdecl mblen(const char* s, size_t n);
+int __cdecl mbtowc(wchar_t* pwc, const char* s, size_t n);
+int __cdecl wctomb(char* s, wchar_t wchar);
+size_t __cdecl mbstowcs(wchar_t* pwcs, const char* s, size_t n);
+size_t __cdecl wcstombs(char* s, const wchar_t* pwcs, size_t n);
+
+void* __cdecl bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+void __cdecl qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+
+int __cdecl rand();
+void __cdecl srand(unsigned int seed);
+} // namespace std
+#else
+extern "C" {
+using size_t = unsigned long long;
+struct div_t {
+  int quot, rem;
+};
+struct ldiv_t {
+  long int quot, rem;
+};
+struct lldiv_t {
+  long long int quot, rem;
+};
+
+[[noreturn]] void __cdecl abort();
+[[noreturn]] void __cdecl exit(int status);
+[[noreturn]] void __cdecl _Exit(int status);
+[[noreturn]] void __cdecl quick_exit(int status);
+int __cdecl atexit(void(__cdecl* func)());
+int __cdecl at_quick_exit(void(__cdecl* func)());
+
+char* __cdecl getenv(const char* name);
+int __cdecl system(const char* string);
+export int __cdecl _wsystem(const wchar_t*);
+
+void __cdecl free(void* ptr);
+void* __cdecl malloc(size_t size);
+void* __cdecl calloc(size_t nmemb, size_t size);
+void* __cdecl realloc(void* ptr, size_t size);
+
+int __cdecl atoi(const char* nptr);
+long int __cdecl atol(const char* nptr);
+long long int __cdecl atoll(const char* nptr);
+double __cdecl atof(const char* nptr);
+
+long int __cdecl strtol(const char* nptr, char** endptr, int base);
+long long int __cdecl strtoll(const char* nptr, char** endptr, int base);
+unsigned long int __cdecl strtoul(const char* nptr, char** endptr, int base);
+unsigned long long int __cdecl strtoull(const char* nptr, char** endptr, int base);
+float __cdecl strtof(const char* nptr, char** endptr);
+double __cdecl strtod(const char* nptr, char** endptr);
+long double __cdecl strtold(const char* nptr, char** endptr);
+
+int __cdecl mblen(const char* s, size_t n);
+int __cdecl mbtowc(wchar_t* pwc, const char* s, size_t n);
+int __cdecl wctomb(char* s, wchar_t wchar);
+size_t __cdecl mbstowcs(wchar_t* pwcs, const char* s, size_t n);
+size_t __cdecl wcstombs(char* s, const wchar_t* pwcs, size_t n);
+
+void* __cdecl bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+void __cdecl qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
+
+int __cdecl rand();
+void __cdecl srand(unsigned int seed);
+
+int __cdecl abs(int j);
+long int __cdecl labs(long int j);
+long long int __cdecl llabs(long long int j);
+
+div_t __cdecl div(int numer, int denom);
+ldiv_t __cdecl ldiv(long int numer, long int denom);
+lldiv_t __cdecl lldiv(long long int numer, long long int denom);
+}
+export namespace std {
+using ::div_t;
+using ::ldiv_t;
+using ::lldiv_t;
+using ::size_t;
+
+using ::_Exit;
+using ::abort;
+using ::atexit;
+using ::exit;
+using ::quick_exit;
+
+using ::getenv;
+using ::system;
+
+using ::calloc;
+using ::free;
+using ::malloc;
+using ::realloc;
+
+using ::atof;
+using ::atoi;
+using ::atol;
+using ::atoll;
+
+using ::strtod;
+using ::strtof;
+using ::strtol;
+using ::strtold;
+using ::strtoll;
+using ::strtoul;
+using ::strtoull;
+
+using ::mblen;
+using ::mbstowcs;
+using ::mbtowc;
+using ::wcstombs;
+using ::wctomb;
+
+using ::bsearch;
+using ::qsort;
+
+using ::rand;
+using ::srand;
+} // namespace std
+#endif
+
+export namespace std {
+
+constexpr int abs(int x) noexcept {
+  if (__builtin_is_constant_evaluated()) return x < 0 ? -x : x;
+  else return __ywlib_dummy({}, ::abs(x));
+}
+constexpr long absl(long x) noexcept {
+  if (__builtin_is_constant_evaluated()) return x < 0 ? -x : x;
+  else return __ywlib_dummy({}, ::labs(x));
+}
+constexpr long long absll(long long x) noexcept {
+  if (__builtin_is_constant_evaluated()) return x < 0 ? -x : x;
+  else return __ywlib_dummy({}, ::llabs(x));
+}
+}
+#endif

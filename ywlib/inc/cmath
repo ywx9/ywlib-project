@@ -1,0 +1,1375 @@
+#pragma once
+#include <inc/vcruntime.h>
+
+#define HUGE_VAL ((double)INFINITY)
+#define HUGE_VALF ((float)INFINITY)
+#define HUGE_VALL ((long double)INFINITY)
+#define INFINITY ((float)(1e+300 * 1e+300))
+
+#ifndef _UCRT_NEGATIVE_NAN
+#define NAN (-(float)(INFINITY * 0.0F))
+#else
+#define NAN ((float)(INFINITY * 0.0F))
+#endif
+
+#define FP_INFINITE 1
+#define FP_NAN 2
+#define FP_NORMAL -1
+#define FP_SUBNORMAL -2
+#define FP_ZERO 0
+
+#define FP_ILOGB0 (-0x7fffffff - 1)
+#define FP_ILOGBNAN 0x7fffffff
+
+#define MATH_ERRNO 1
+#define MATH_ERREXCEPT 2
+#define math_errhandling 3
+
+#ifndef __ywlib_import
+template<__ywlib_arithmetic... Ts> using __ywlib_math_type = __ywlib_conditional<__ywlib_integral<decltype((Ts{} + ...))>, double, decltype((Ts{} + ...))>;
+template<typename T, typename U> using _Common_float_type_t = __ywlib_math_type<T, U>;
+#ifdef __ywlib_export
+extern "C" {
+short __cdecl _fdtest(float*);
+short __cdecl _dtest(double*);
+short __cdecl _ldtest(long double*);
+
+int __cdecl _fdpcomp(float, float);
+int __cdecl _dpcomp(double, double);
+int __cdecl _ldpcomp(long double, long double);
+extern "C++" template<typename T, typename U> constexpr int __cdecl __ywlib_fpcomp(T x, U y) noexcept {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return _fdpcomp(x, y);
+      else if constexpr (__ywlib_same_as<common, double>) return _dpcomp(x, y);
+      else if constexpr (__ywlib_same_as<common, long double>) return _ldpcomp(x, y);
+    } else return (4 & -int(x > y)) & (2 & -int(x == y) & (1 & -int(x < y)));
+  } else return __ywlib_fpcomp(static_cast<double>(x), static_cast<double>(y));
+}
+
+int __cdecl _fdsign(float);
+int __cdecl _dsign(double);
+int __cdecl _ldsign(long double);
+
+double __cdecl copysign(double x, double y);
+float __cdecl copysignf(float x, float y);
+long double __cdecl copysignl(long double x, long double y);
+
+float __cdecl frexpf(float, int*);
+double __cdecl frexp(double, int*);
+long double __cdecl frexpl(long double, int*);
+
+constexpr double __cdecl ldexp(double x, int exp);
+constexpr float __cdecl ldexpf(float x, int exp);
+constexpr long double __cdecl ldexpl(long double x, int exp);
+
+constexpr int __cdecl ilogb(double x);
+constexpr int __cdecl ilogbf(float x);
+constexpr int __cdecl ilogbl(long double x);
+
+constexpr double __cdecl logb(double x);
+constexpr float __cdecl logbf(float x);
+constexpr long double __cdecl logbl(long double x);
+
+constexpr double __cdecl modf(double value, double* iptr);
+constexpr float __cdecl modff(float value, float* iptr);
+constexpr long double __cdecl modfl(long double value, long double* iptr);
+
+constexpr double __cdecl scalbn(double x, int n);
+constexpr float __cdecl scalbnf(float x, int n);
+constexpr long double __cdecl scalbnl(long double x, int n);
+
+constexpr double __cdecl scalbln(double x, long n);
+constexpr float __cdecl scalblnf(float x, long n);
+constexpr long double __cdecl scalblnl(long double x, long n);
+
+constexpr double __cdecl fabs(double x);
+constexpr float __cdecl fabsf(float x);
+constexpr long double __cdecl fabsl(long double x);
+
+constexpr double __cdecl ceil(double x);
+constexpr float __cdecl ceilf(float x);
+constexpr long double __cdecl ceill(long double x);
+
+constexpr double __cdecl floor(double x);
+constexpr float __cdecl floorf(float x);
+constexpr long double __cdecl floorl(long double x);
+
+constexpr double __cdecl round(double x);
+constexpr float __cdecl roundf(float x);
+constexpr long double __cdecl roundl(long double x);
+
+constexpr long __cdecl lround(double x);
+constexpr long __cdecl lroundf(float x);
+constexpr long __cdecl lroundl(long double x);
+
+constexpr long long __cdecl llround(double x);
+constexpr long long __cdecl llroundf(float x);
+constexpr long long __cdecl llroundl(long double x);
+
+constexpr double __cdecl trunc(double x);
+constexpr float __cdecl truncf(float x);
+constexpr long double __cdecl truncl(long double x);
+
+constexpr double __cdecl fmod(double x, double y);
+constexpr float __cdecl fmodf(float x, float y);
+constexpr long double __cdecl fmodl(long double x, long double y);
+
+constexpr double __cdecl remainder(double x, double y);
+constexpr float __cdecl remainderf(float x, float y);
+constexpr long double __cdecl remainderl(long double x, long double y);
+
+constexpr double __cdecl remquo(double x, double y, int* quo);
+constexpr float __cdecl remquof(float x, float y, int* quo);
+constexpr long double __cdecl remquol(long double x, long double y, int* quo);
+
+constexpr double __cdecl nextafter(double x, double y);
+constexpr float __cdecl nextafterf(float x, float y);
+constexpr long double __cdecl nextafterl(long double x, long double y);
+
+constexpr double __cdecl nexttoward(double x, long double y);
+constexpr float __cdecl nexttowardf(float x, long double y);
+constexpr long double __cdecl nexttowardl(long double x, long double y);
+
+constexpr double __cdecl fdim(double x, double y);
+constexpr float __cdecl fdimf(float x, float y);
+constexpr long double __cdecl fdiml(long double x, long double y);
+
+constexpr double __cdecl fmax(double x, double y);
+constexpr float __cdecl fmaxf(float x, float y);
+constexpr long double __cdecl fmaxl(long double x, long double y);
+
+constexpr double __cdecl fmin(double x, double y);
+constexpr float __cdecl fminf(float x, float y);
+constexpr long double __cdecl fminl(long double x, long double y);
+
+constexpr double __cdecl fma(double x, double y, double z);
+constexpr float __cdecl fmaf(float x, float y, float z);
+constexpr long double __cdecl fmal(long double x, long double y, long double z);
+
+constexpr double __cdecl lerp(double a, double b, double t) noexcept;
+
+// non-constexpr functions
+
+double __cdecl cos(double x);
+float __cdecl cosf(float x);
+extern "C++" template<typename T> T __ywlib_cos(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::cos(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::cosf(x);
+  else return static_cast<long double>(::cos(static_cast<double>(x)));
+}
+
+double __cdecl sin(double x);
+float __cdecl sinf(float x);
+extern "C++" template<typename T> T __ywlib_sin(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::sin(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::sinf(x);
+  else return static_cast<long double>(::sin(static_cast<double>(x)));
+}
+
+double __cdecl tan(double x);
+float __cdecl tanf(float x);
+extern "C++" template<typename T> T __ywlib_tan(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::tan(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::tanf(x);
+  else return static_cast<long double>(::tan(static_cast<double>(x)));
+}
+
+double __cdecl acos(double x);
+float __cdecl acosf(float x);
+extern "C++" template<typename T> T __ywlib_acos(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::acos(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::acosf(x);
+  else return static_cast<long double>(::acos(static_cast<double>(x)));
+}
+
+double __cdecl asin(double x);
+float __cdecl asinf(float x);
+extern "C++" template<typename T> T __ywlib_asin(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::asin(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::asinf(x);
+  else return static_cast<long double>(::asin(static_cast<double>(x)));
+}
+
+double __cdecl atan(double x);
+float __cdecl atanf(float x);
+extern "C++" template<typename T> T __ywlib_atan(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::atan(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::atanf(x);
+  else return static_cast<long double>(::atan(static_cast<double>(x)));
+}
+
+double __cdecl atan2(double y, double x);
+float __cdecl atan2f(float y, float x);
+extern "C++" template<typename T> T __ywlib_atan2(T y, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::atan2(y, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::atan2f(y, x);
+  else return static_cast<long double>(::atan2(static_cast<double>(y), static_cast<double>(x)));
+}
+
+double __cdecl cosh(double x);
+float __cdecl coshf(float x);
+extern "C++" template<typename T> T __ywlib_cosh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::cosh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::coshf(x);
+  else return static_cast<long double>(::cosh(static_cast<double>(x)));
+}
+
+double __cdecl sinh(double x);
+float __cdecl sinhf(float x);
+extern "C++" template<typename T> T __ywlib_sinh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::sinh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::sinhf(x);
+  else return static_cast<long double>(::sinh(static_cast<double>(x)));
+}
+
+double __cdecl tanh(double x);
+float __cdecl tanhf(float x);
+extern "C++" template<typename T> T __ywlib_tanh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::tanh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::tanhf(x);
+  else return static_cast<long double>(::tanh(static_cast<double>(x)));
+}
+
+double __cdecl acosh(double x);
+float __cdecl acoshf(float x);
+extern "C++" template<typename T> T __ywlib_acosh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::acosh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::acoshf(x);
+  else return static_cast<long double>(::acosh(static_cast<double>(x)));
+}
+
+double __cdecl asinh(double x);
+float __cdecl asinhf(float x);
+extern "C++" template<typename T> T __ywlib_asinh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::asinh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::asinhf(x);
+  else return static_cast<long double>(::asinh(static_cast<double>(x)));
+}
+
+double __cdecl atanh(double x);
+float __cdecl atanhf(float x);
+extern "C++" template<typename T> T __ywlib_atanh(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::atanh(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::atanhf(x);
+  else return static_cast<long double>(::atanh(static_cast<double>(x)));
+}
+
+double __cdecl exp(double x);
+float __cdecl expf(float x);
+extern "C++" template<typename T> T __ywlib_exp(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::exp(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::expf(x);
+  else return static_cast<long double>(::exp(static_cast<double>(x)));
+}
+
+double __cdecl exp2(double x);
+float __cdecl exp2f(float x);
+extern "C++" template<typename T> T __ywlib_exp2(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::exp2(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::exp2f(x);
+  else return static_cast<long double>(::exp2(static_cast<double>(x)));
+}
+
+double __cdecl expm1(double x);
+float __cdecl expm1f(float x);
+extern "C++" template<typename T> T __ywlib_expm1(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::expm1(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::expm1f(x);
+  else return static_cast<long double>(::expm1(static_cast<double>(x)));
+}
+
+double __cdecl log(double x);
+float __cdecl logf(float x);
+extern "C++" template<typename T> T __ywlib_log(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::log(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::logf(x);
+  else return static_cast<long double>(::log(static_cast<double>(x)));
+}
+
+double __cdecl log2(double x);
+float __cdecl log2f(float x);
+extern "C++" template<typename T> T __ywlib_log2(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::log2(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::log2f(x);
+  else return static_cast<long double>(::log2(static_cast<double>(x)));
+}
+
+double __cdecl log10(double x);
+float __cdecl log10f(float x);
+extern "C++" template<typename T> T __ywlib_log10(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::log10(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::log10f(x);
+  else return static_cast<long double>(::log10(static_cast<double>(x)));
+}
+
+double __cdecl log1p(double x);
+float __cdecl log1pf(float x);
+extern "C++" template<typename T> T __ywlib_log1p(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::log1p(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::log1pf(x);
+  else return static_cast<long double>(::log1p(static_cast<double>(x)));
+}
+
+double __cdecl sqrt(double x);
+float __cdecl sqrtf(float x);
+extern "C++" template<typename T> T __ywlib_sqrt(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::sqrt(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::sqrtf(x);
+  else return static_cast<long double>(::sqrt(static_cast<double>(x)));
+}
+
+double __cdecl cbrt(double x);
+float __cdecl cbrtf(float x);
+extern "C++" template<typename T> T __ywlib_cbrt(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::cbrt(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::cbrtf(x);
+  else return static_cast<long double>(::cbrt(static_cast<double>(x)));
+}
+
+double __cdecl pow(double x, double y);
+float __cdecl powf(float x, float y);
+extern "C++" template<typename T> T __ywlib_pow(T x, T y) {
+  if constexpr (__ywlib_same_as<T, double>) return ::pow(x, y);
+  else if constexpr (__ywlib_same_as<T, float>) return ::powf(x, y);
+  else return static_cast<long double>(::pow(static_cast<double>(x), static_cast<double>(y)));
+}
+
+double __cdecl hypot(double x, double y);
+float __cdecl _hypotf(float x, float y);
+double __stdcall __std_smf_hypot3(double x, double y, double z);
+float __stdcall __std_smf_hypot3f(float x, float y, float z);
+extern "C++" template<typename T> T __ywlib_hypot(T x, T y) {
+  if constexpr (__ywlib_same_as<T, double>) return ::hypot(x, y);
+  else if constexpr (__ywlib_same_as<T, float>) return ::_hypotf(x, y);
+  else return static_cast<long double>(::hypot(static_cast<double>(x), static_cast<double>(y)));
+}
+extern "C++" template<typename T> T __ywlib_hypot(T x, T y, T z) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_hypot3(x, y, z);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_hypot3f(x, y, z);
+  else return static_cast<long double>(::hypot(static_cast<double>(x), static_cast<double>(y), static_cast<double>(z)));
+}
+
+double __cdecl erf(double x);
+float __cdecl erff(float x);
+extern "C++" template<typename T> T __ywlib_erf(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::erf(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::erff(x);
+  else return static_cast<long double>(::erf(static_cast<double>(x)));
+}
+
+double __cdecl erfc(double x);
+float __cdecl erfcf(float x);
+extern "C++" template<typename T> T __ywlib_erfc(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::erfc(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::erfcf(x);
+  else return static_cast<long double>(::erfc(static_cast<double>(x)));
+}
+
+double __cdecl lgamma(double x);
+float __cdecl lgammaf(float x);
+extern "C++" template<typename T> T __ywlib_lgamma(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::lgamma(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::lgammaf(x);
+  else return static_cast<long double>(::lgamma(static_cast<double>(x)));
+}
+
+double __cdecl tgamma(double x);
+float __cdecl tgammaf(float x);
+extern "C++" template<typename T> T __ywlib_tgamma(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::tgamma(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::tgammaf(x);
+  else return static_cast<long double>(::tgamma(static_cast<double>(x)));
+}
+
+double __cdecl nearbyint(double x);
+float __cdecl nearbyintf(float x);
+extern "C++" template<typename T> T __ywlib_nearbyint(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::nearbyint(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::nearbyintf(x);
+  else return static_cast<long double>(::nearbyint(static_cast<double>(x)));
+}
+
+double __cdecl rint(double x);
+float __cdecl rintf(float x);
+extern "C++" template<typename T> T __ywlib_rint(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::rint(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::rintf(x);
+  else return static_cast<long double>(::rint(static_cast<double>(x)));
+}
+
+long __cdecl lrint(double x);
+long __cdecl lrintf(float x);
+extern "C++" template<typename T> long __ywlib_lrint(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::lrint(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::lrintf(x);
+  else return ::lrint(static_cast<double>(x));
+}
+
+long long __cdecl llrint(double x);
+long long __cdecl llrintf(float x);
+extern "C++" template<typename T> long long __ywlib_llrint(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::llrint(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::llrintf(x);
+  else return ::llrint(static_cast<double>(x));
+}
+
+double __cdecl nan(const char* tagp);
+float __cdecl nanf(const char* tagp);
+long double __cdecl nanl(const char* tagp);
+
+double __stdcall __std_smf_assoc_laguerre(unsigned n, unsigned m, double x);
+float __stdcall __std_smf_assoc_laguerref(unsigned n, unsigned m, float x);
+extern "C++" template<typename T> T __ywlib_assoc_laguerre(unsigned n, unsigned m, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_assoc_laguerre(n, m, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_assoc_laguerref(n, m, x);
+  else return static_cast<long double>(::__std_smf_assoc_laguerrel(n, m, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_assoc_legendre(unsigned l, unsigned m, double x);
+float __stdcall __std_smf_assoc_legendref(unsigned l, unsigned m, float x);
+extern "C++" template<typename T> T __ywlib_assoc_legendre(unsigned l, unsigned m, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::assoc_legendre(l, m, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::assoc_legendref(l, m, x);
+  else return static_cast<long double>(::__std_smf_assoc_legendre(l, m, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_beta(double x, double y);
+float __stdcall __std_smf_betaf(float x, float y);
+extern "C++" template<typename T> T __ywlib_beta(T x, T y) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_beta(x, y);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_betaf(x, y);
+  else return static_cast<long double>(::__std_smf_beta(static_cast<double>(x), static_cast<double>(y)));
+}
+
+double __stdcall __std_smf_comp_ellint_1(double k);
+float __stdcall __std_smf_comp_ellint_1f(float k);
+extern "C++" template<typename T> T __ywlib_comp_ellint_1(T k) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_comp_ellint_1(k);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_comp_ellint_1f(k);
+  else return static_cast<long double>(::__std_smf_comp_ellint_1(static_cast<double>(k)));
+}
+
+double __stdcall __std_smf_comp_ellint_2(double k);
+float __stdcall __std_smf_comp_ellint_2f(float k);
+extern "C++" template<typename T> T __ywlib_comp_ellint_2(T k) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_comp_ellint_2(k);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_comp_ellint_2f(k);
+  else return static_cast<long double>(::__std_smf_comp_ellint_2(static_cast<double>(k)));
+}
+
+double __stdcall __std_smf_comp_ellint_3(double k, double nu);
+float __stdcall __std_smf_comp_ellint_3f(float k, float nu);
+extern "C++" template<typename T> T __ywlib_comp_ellint_3(T k, T nu) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_comp_ellint_3(k, nu);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_comp_ellint_3f(k, nu);
+  else return static_cast<long double>(::__std_smf_comp_ellint_3(static_cast<double>(k), static_cast<double>(nu)));
+}
+
+double __stdcall __std_smf_cyl_bessel_i(double nu, double x);
+float __stdcall __std_smf_cyl_bessel_if(float nu, float x);
+extern "C++" template<typename T> T __ywlib_cyl_bessel_i(T nu, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_cyl_bessel_i(nu, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_cyl_bessel_if(nu, x);
+  else return static_cast<long double>(::__std_smf_cyl_bessel_il(static_cast<double>(nu), static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_cyl_bessel_j(double nu, double x);
+float __stdcall __std_smf_cyl_bessel_jf(float nu, float x);
+extern "C++" template<typename T> T __ywlib_cyl_bessel_j(T nu, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_cyl_bessel_j(nu, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_cyl_bessel_jf(nu, x);
+  else return static_cast<long double>(::__std_smf_cyl_bessel_jl(static_cast<double>(nu), static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_cyl_bessel_k(double nu, double x);
+float __stdcall __std_smf_cyl_bessel_kf(float nu, float x);
+extern "C++" template<typename T> T __ywlib_cyl_bessel_k(T nu, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_cyl_bessel_k(nu, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_cyl_bessel_kf(nu, x);
+  else return static_cast<long double>(::__std_smf_cyl_bessel_kl(static_cast<double>(nu), static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_cyl_neumann(double nu, double x);
+float __stdcall __std_smf_cyl_neumannf(float nu, float x);
+extern "C++" template<typename T> T __ywlib_cyl_neumann(T nu, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_cyl_neumann(nu, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_cyl_neumannf(nu, x);
+  else return static_cast<long double>(::__std_smf_cyl_neumannl(static_cast<double>(nu), static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_ellint_1(double k, double phi);
+float __stdcall __std_smf_ellint_1f(float k, float phi);
+extern "C++" template<typename T> T __ywlib_ellint_1(T k, T phi) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_ellint_1(k, phi);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_ellint_1f(k, phi);
+  else return static_cast<long double>(::__std_smf_ellint_1(static_cast<double>(k), static_cast<double>(phi)));
+}
+
+double __stdcall __std_smf_ellint_2(double k, double phi);
+float __stdcall __std_smf_ellint_2f(float k, float phi);
+extern "C++" template<typename T> T __ywlib_ellint_2(T k, T phi) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_ellint_2(k, phi);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_ellint_2f(k, phi);
+  else return static_cast<long double>(::__std_smf_ellint_2(static_cast<double>(k), static_cast<double>(phi)));
+}
+
+double __stdcall __std_smf_ellint_3(double k, double nu, double phi);
+float __stdcall __std_smf_ellint_3f(float k, float nu, float phi);
+extern "C++" template<typename T> T __ywlib_ellint_3(T k, T nu, T phi) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_ellint_3(k, nu, phi);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_ellint_3f(k, nu, phi);
+  else return static_cast<long double>(::__std_smf_ellint_3(static_cast<double>(k), static_cast<double>(nu), static_cast<double>(phi)));
+}
+
+double __stdcall __std_smf_expint(double x);
+float __stdcall __std_smf_expintf(float x);
+extern "C++" template<typename T> T __ywlib_expint(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_expint(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_expintf(x);
+  else return static_cast<long double>(::__std_smf_expint(static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_hermite(unsigned n, double x);
+float __stdcall __std_smf_hermitef(unsigned n, float x);
+extern "C++" template<typename T> T __ywlib_hermite(unsigned n, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_hermite(n, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_hermitef(n, x);
+  else return static_cast<long double>(::__std_smf_hermite(n, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_laguerre(unsigned n, double x);
+float __stdcall __std_smf_laguerref(unsigned n, float x);
+extern "C++" template<typename T> T __ywlib_laguerre(unsigned n, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_laguerre(n, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_laguerref(n, x);
+  else return static_cast<long double>(::__std_smf_laguerre(n, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_legendre(unsigned l, double x);
+float __stdcall __std_smf_legendref(unsigned l, float x);
+extern "C++" template<typename T> T __ywlib_legendre(unsigned l, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_legendre(l, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_legendref(l, x);
+  else return static_cast<long double>(::__std_smf_legendre(l, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_riemann_zeta(double x);
+float __stdcall __std_smf_riemann_zetaf(float x);
+extern "C++" template<typename T> T __ywlib_riemann_zeta(T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_riemann_zeta(x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_riemann_zetaf(x);
+  else return static_cast<long double>(::__std_smf_riemann_zeta(static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_sph_bessel(unsigned n, double x);
+float __stdcall __std_smf_sph_besself(unsigned n, float x);
+extern "C++" template<typename T> T __ywlib_sph_bessel(unsigned n, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_sph_bessel(n, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_sph_besself(n, x);
+  else return static_cast<long double>(::__std_smf_sph_bessel(n, static_cast<double>(x)));
+}
+
+double __stdcall __std_smf_sph_legendre(unsigned l, unsigned m, double theta);
+float __stdcall __std_smf_sph_legendref(unsigned l, unsigned m, float theta);
+extern "C++" template<typename T> T __ywlib_sph_legendre(unsigned l, unsigned m, T theta) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_sph_legendre(l, m, theta);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_sph_legendref(l, m, theta);
+  else return static_cast<long double>(::__std_smf_sph_legendre(l, m, static_cast<double>(theta)));
+}
+
+double __stdcall __std_smf_sph_neumann(unsigned n, double x);
+float __stdcall __std_smf_sph_neumannf(unsigned n, float x);
+extern "C++" template<typename T> T __ywlib_sph_neumann(unsigned n, T x) {
+  if constexpr (__ywlib_same_as<T, double>) return ::__std_smf_sph_neumann(n, x);
+  else if constexpr (__ywlib_same_as<T, float>) return ::__std_smf_sph_neumannf(n, x);
+  else return static_cast<long double>(::__std_smf_sph_neumann(n, static_cast<double>(x)));
+}
+}
+#endif
+export namespace std {
+using float_t = float;
+using double_t = double;
+
+// constexpr functions
+
+template<__ywlib_arithmetic T> constexpr int fpclassify(T x) noexcept {
+  if (__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, double>) {
+      size_t y = __builtin_bit_cast(size_t, x);
+      if (x == 0) return FP_ZERO;
+      else if ((y & 0x7ff0000000000000) == 0x7ff0000000000000) return y & 0x000fffffffffffff ? FP_NAN : FP_INFINITE;
+      else return (y & 0x7ff0000000000000) == 0 ? FP_SUBNORMAL : FP_NORMAL;
+    } else return fpclassify(static_cast<double>(x));
+  } else {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::_fdtest(&x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::_dtest(&x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::_ldtest(&x));
+    else return x == 0 ? FP_ZERO : FP_NORMAL;
+  }
+}
+template<__ywlib_arithmetic T> constexpr bool isfinite(T x) noexcept { return fpclassify(x) <= 0; }
+template<__ywlib_arithmetic T> constexpr bool isinf(T x) noexcept { return fpclassify(x) == FP_INFINITE; }
+template<__ywlib_arithmetic T> constexpr bool isnan(T x) noexcept { return fpclassify(x) == FP_NAN; }
+template<__ywlib_arithmetic T> constexpr bool isnormal(T x) noexcept { return fpclassify(x) == FP_NORMAL; }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool isgreater(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) & 4; }
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool isgreaterequal(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) & 6; }
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool isless(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) & 1; }
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool islessequal(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) & 3; }
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool islessgreater(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) & 5; }
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr bool isunordered(T x, U y) noexcept { return __ywlib_dummy(0, __ywlib_fpcomp(x, y)) == 0; }
+
+template<__ywlib_arithmetic T> constexpr bool signbit(T x) noexcept {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return _fdsign(x);
+    else if constexpr (__ywlib_same_as<T, double>) return _dsign(x);
+    else if constexpr (__ywlib_same_as<T, long double>) return _ldsign(x);
+    else if constexpr (__ywlib_signed_integral<T>) return x < 0;
+    else return false;
+  } else return x < 0;
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> copysign(T mag, U sign) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::copysignf(mag, sign));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::copysign(mag, sign));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::copysignl(mag, sign));
+    } else return (mag < 0) ^ (sign < 0) ? -mag : mag;
+  } else return copysign(static_cast<common>(mag), static_cast<common>(sign));
+}
+constexpr float copysignf(float mag, float sign) { return copysign(mag, sign); }
+constexpr long double copysignl(long double mag, long double sign) { return copysign(mag, sign); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> frexp(T x, int* exp) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::frexpf(x, exp));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::frexp(x, exp));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::frexpl(x, exp));
+    else return __ywlib_dummy({}, ::frexp(static_cast<double>(x), exp));
+  } else {
+    if constexpr (__ywlib_same_as<T, double>) {
+      if (x == 0.0) return *exp = 0, 0.0;
+      size_t y = __builtin_bit_cast(size_t, x);
+      int e = int((y >> 52) & 0x7ff) - 1023;
+      y = (y & 0x000fffffffffffff) | 0x3ff0000000000000;
+      *exp = e + 1;
+      return copysign(__ywlib_bitcast<double>(y), x);
+    } else return static_cast<__ywlib_math_type<T>>(frexp(static_cast<double>(x), exp));
+  }
+}
+constexpr float frexpf(float x, int* exp) { return frexp(x, exp); }
+constexpr long double frexpl(long double x, int* exp) { return frexp(x, exp); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> ldexp(T x, int exp) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::ldexpf(x, exp));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::ldexp(x, exp));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::ldexpl(x, exp));
+    else return __ywlib_dummy({}, ::ldexp(static_cast<double>(x), exp));
+  } else {
+    if constexpr (__ywlib_same_as<T, double>) {
+      if (x == 0.0 || exp == 0) return x;
+      size_t y = __builtin_bit_cast(size_t, x);
+      int e = int((y >> 52) & 0x7ff);
+      if (e == 0) {
+        for (; 0 < exp; --exp) x *= 2.0;
+        for (; 0 > exp; ++exp) x *= 0.5;
+        return x;
+      }
+      e += exp;
+      if (e <= 0) return 0.0;
+      else if (e >= 0x7ff) return __builtin_bit_cast(double, x < 0 ? 0xfff0000000000000 : 0x7ff0000000000000);
+      else return __builtin_bit_cast(double, (size_t(e) << 52) | (y & 0x800fffffffffffff));
+    } else return static_cast<__ywlib_math_type<T>>(ldexp(static_cast<double>(x), exp));
+  }
+}
+constexpr float ldexpf(float x, int exp) { return ldexp(x, exp); }
+constexpr long double ldexpl(long double x, int exp) { return ldexp(x, exp); }
+
+template<__ywlib_arithmetic T> constexpr int ilogb(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::ilogbf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::ilogb(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::ilogbl(x));
+    else return __ywlib_dummy({}, ::ilogb(static_cast<double>(x)));
+  } else {
+    if (x == 0) return FP_ILOGB0;
+    if (isnan(x)) return FP_ILOGBNAN;
+    if (x < 0) x = -x;
+    return [&](int e) { return frexp(x, &e), e - 1; }({});
+  }
+}
+constexpr int ilogbf(float x) { return ilogb(x); }
+constexpr int ilogbl(long double x) { return ilogb(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> logb(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::logbf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::logb(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::logbl(x));
+    else return __ywlib_dummy({}, ::logb(static_cast<double>(x)));
+  } else return static_cast<__ywlib_math_type<T>>(ilogb(x));
+}
+constexpr float logbf(float x) { return logb(x); }
+constexpr long double logbl(long double x) { return logb(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> modf(T x, __ywlib_math_type<T>* iptr) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::modff(x, iptr));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::modf(x, iptr));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::modfl(x, iptr));
+    else return __ywlib_dummy({}, ::modf(static_cast<double>(x), iptr));
+  } else {
+    if constexpr (__ywlib_same_as<T, double>) {
+      if (x == 0) return *iptr = 0, x;
+      size_t y = __builtin_bit_cast(size_t, x);
+      int e = int((y >> 52) & 0x7ff) - 1023;
+      if (e < 0) return *iptr = copysign(0.0, x), x;
+      if (e >= 52) return *iptr = x, copysign(0.0, x);
+      if (x < 0) *iptr = -static_cast<double>(static_cast<size_t>(-x));
+      else *iptr = static_cast<double>(static_cast<size_t>(x));
+      return x - *iptr;
+    } else {
+      double ip;
+      const auto r = modf(static_cast<double>(x), &ip);
+      *iptr = static_cast<__ywlib_math_type<T>>(ip);
+      return static_cast<__ywlib_math_type<T>>(r);
+    }
+  }
+}
+constexpr float modff(float x, float* iptr) { return modf(x, iptr); }
+constexpr long double modfl(long double x, long double* iptr) { return modf(x, iptr); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> scalbn(T x, int n) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::scalbnf(x, n));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::scalbn(x, n));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::scalbnl(x, n));
+    else return __ywlib_dummy({}, ::scalbn(static_cast<double>(x), n));
+  } else return ldexp(x, n);
+}
+constexpr float scalbnf(float x, int n) { return scalbn(x, n); }
+constexpr long double scalbnl(long double x, int n) { return scalbn(x, n); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> scalbln(T x, long n) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::scalblnf(x, n));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::scalbln(x, n));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::scalblnl(x, n));
+    else return __ywlib_dummy({}, ::scalbln(static_cast<double>(x), n));
+  } else return ldexp(x, n);
+}
+constexpr float scalblnf(float x, int n) { return scalbln(x, n); }
+constexpr long double scalblnl(long double x, int n) { return scalbln(x, n); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> fabs(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::fabsf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::fabs(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::fabsl(x));
+    else if constexpr (__ywlib_signed_integral<T>) return x < 0 ? -x : x;
+    else return x;
+  } else return static_cast<__ywlib_math_type<T>>(x < 0 ? -x : x);
+}
+template<__ywlib_floating T> constexpr T abs(T x) { return fabs(x); }
+constexpr float fabsf(float x) { return fabs(x); }
+constexpr long double fabsl(long double x) { return fabs(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> ceil(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::ceilf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::ceil(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::ceill(x));
+    else return x;
+  } else return [&](__ywlib_math_type<T> i) { return modf(x, &i), i + (x > 0); }({});
+}
+constexpr float ceilf(float x) { return ceil(x); }
+constexpr long double ceill(long double x) { return ceil(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> floor(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::floorf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::floor(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::floorl(x));
+    else return x;
+  } else return [&](__ywlib_math_type<T> i) { return modf(x, &i), i - (x < 0); }({});
+}
+constexpr float floorf(float x) { return floor(x); }
+constexpr long double floorl(long double x) { return floor(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> trunc(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::truncf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::trunc(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::truncl(x));
+    else return x;
+  } else return [&](__ywlib_math_type<T> i) { return modf(x, &i), i; }({});
+}
+constexpr float truncf(float x) { return trunc(x); }
+constexpr long double truncl(long double x) { return trunc(x); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T> round(T x) {
+  using common = __ywlib_math_type<T>;
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::roundf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::round(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::roundl(x));
+    else return x;
+  } else return [&](common i) { return modf(x + copysign(common(0.5), x), &i), i; }({});
+}
+constexpr float roundf(float x) { return round(x); }
+constexpr long double roundl(long double x) { return round(x); }
+
+template<__ywlib_arithmetic T> constexpr long lround(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::lroundf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::lround(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::lroundl(x));
+    else return static_cast<long>(x);
+  } else return static_cast<long>(round(x));
+}
+constexpr long lroundf(float x) { return lround(x); }
+constexpr long lroundl(long double x) { return lround(x); }
+
+template<__ywlib_arithmetic T> constexpr long long llround(T x) {
+  if (!__builtin_is_constant_evaluated()) {
+    if constexpr (__ywlib_same_as<T, float>) return __ywlib_dummy({}, ::llroundf(x));
+    else if constexpr (__ywlib_same_as<T, double>) return __ywlib_dummy({}, ::llround(x));
+    else if constexpr (__ywlib_same_as<T, long double>) return __ywlib_dummy({}, ::llroundl(x));
+    else return static_cast<long long>(x);
+  } else return static_cast<long long>(round(x));
+}
+constexpr long long llroundf(float x) { return llround(x); }
+constexpr long long llroundl(long double x) { return llround(x); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T> fmod(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::fmodf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::fmod(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::fmodl(x, y));
+    } else return y == 0 ? common(NAN) : x - y * trunc(x / y);
+  } else return fmod(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float fmodf(float x, float y) { return fmod(x, y); }
+constexpr long double fmodl(long double x, long double y) { return fmod(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T> remainder(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::remainderf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::remainder(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::remainderl(x, y));
+    } else {
+      if (y == 0) return common(NAN);
+      common ipart;
+      auto fpart = modf(x / y, &ipart);
+      if (fpart > 0.5 || (fpart == 0.5 && int64_t(ipart) % 2 != 0)) ipart += 1;
+      else if (fpart < -0.5 || (fpart == -0.5 && int64_t(ipart) % 2 != 0)) ipart -= 1;
+      return x - y * ipart;
+    }
+  } else return remainder(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float remainderf(float x, float y) { return remainder(x, y); }
+constexpr long double remainderl(long double x, long double y) { return remainder(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> remquo(T x, U y, int* quo) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::remquof(x, y, quo));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::remquo(x, y, quo));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::remquol(x, y, quo));
+    } else {
+      if (y == 0) return *quo = 0, common(NAN);
+      common q;
+      auto fpart = modf(x / y, &q);
+      if (fpart > 0.5 || (fpart == 0.5 && int64_t(q) % 2 != 0)) q += 1;
+      else if (fpart < -0.5 || (fpart == -0.5 && int64_t(q) % 2 != 0)) q -= 1;
+      *quo = static_cast<int>(fmod(q, 8));
+      if (*quo < 0) *quo += 8;
+      return x - y * q;
+    }
+  } else return remquo(static_cast<common>(x), static_cast<common>(y), quo);
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> nextafter(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::nextafterf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::nextafter(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::nextafterl(x, y));
+    } else {
+      if constexpr (__ywlib_same_as<common, double>) {
+        if (x == y) return x;
+        if (x == 0) return __builtin_bit_cast(double, size_t(1)) * (y < 0 ? -1 : 1);
+        if (x != x || y != y) return x + y; // NAN
+        return __builtin_bit_cast(double, __builtin_bit_cast(size_t, x) + (y < x ? -1 : 1));
+      } else return static_cast<common>(nextafter(static_cast<double>(x), static_cast<double>(y)));
+    }
+  } else return nextafter(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float nextafterf(float x, float y) { return nextafter(x, y); }
+constexpr long double nextafterl(long double x, long double y) { return nextafter(x, y); }
+
+template<__ywlib_arithmetic T> constexpr __ywlib_math_type<T, T> nexttoward(T x, long double y) {
+  return static_cast<__ywlib_math_type<T, T>>(nextafter(static_cast<double>(x), static_cast<double>(y)));
+}
+constexpr float nexttowardf(float x, long double y) { return nexttoward(x, y); }
+constexpr long double nexttowardl(long double x, long double y) { return nexttoward(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> fdim(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::fdimf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::fdim(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::fdiml(x, y));
+    } else return x > y ? x - y : 0;
+  } else return fdim(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float fdimf(float x, float y) { return fdim(x, y); }
+constexpr long double fdiml(long double x, long double y) { return fdim(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> fmax(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::fmaxf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::fmax(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::fmaxl(x, y));
+    } else return x > y ? x : y;
+  } else return fmax(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float fmaxf(float x, float y) { return fmax(x, y); }
+constexpr long double fmaxl(long double x, long double y) { return fmax(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> fmin(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::fminf(x, y));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::fmin(x, y));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::fminl(x, y));
+    } else return x < y ? x : y;
+  } else return fmin(static_cast<common>(x), static_cast<common>(y));
+}
+constexpr float fminf(float x, float y) { return fmin(x, y); }
+constexpr long double fminl(long double x, long double y) { return fmin(x, y); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U, __ywlib_arithmetic V> constexpr __ywlib_math_type<T, U, V> fma(T x, U y, V z) {
+  using common = __ywlib_math_type<T, U, V>;
+  if constexpr (__ywlib_same_as<common, T, U, V>) {
+    if (!__builtin_is_constant_evaluated()) {
+      if constexpr (__ywlib_same_as<common, float>) return __ywlib_dummy({}, ::fmaf(x, y, z));
+      else if constexpr (__ywlib_same_as<common, double>) return __ywlib_dummy({}, ::fma(x, y, z));
+      else if constexpr (__ywlib_same_as<common, long double>) return __ywlib_dummy({}, ::fmal(x, y, z));
+    } else return x * y + z;
+  } else return fma(static_cast<common>(x), static_cast<common>(y), static_cast<common>(z));
+}
+constexpr float fmaf(float x, float y, float z) { return fma(x, y, z); }
+constexpr long double fmal(long double x, long double y, long double z) { return fma(x, y, z); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> constexpr __ywlib_math_type<T, U> lerp(T a, T b, U t) noexcept { return a + (b - a) * t; }
+
+// non-constexpr functions
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> cos(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_cos(x));
+  else return cos(static_cast<common>(x));
+}
+inline float cosf(float x) { return cos(x); }
+inline long double cosl(long double x) { return cos(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sin(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sin(x));
+  else return sin(static_cast<common>(x));
+}
+inline float sinf(float x) { return sin(x); }
+inline long double sinl(long double x) { return sin(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> tan(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_tan(x));
+  else return tan(static_cast<common>(x));
+}
+inline float tanf(float x) { return tan(x); }
+inline long double tanl(long double x) { return tan(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> acos(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_acos(x));
+  else return acos(static_cast<common>(x));
+}
+inline float acosf(float x) { return acos(x); }
+inline long double acosl(long double x) { return acos(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> asin(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_asin(x));
+  else return asin(static_cast<common>(x));
+}
+inline float asinf(float x) { return asin(x); }
+inline long double asinl(long double x) { return asin(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> atan(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_atan(x));
+  else return atan(static_cast<common>(x));
+}
+inline float atanf(float x) { return atan(x); }
+inline long double atanl(long double x) { return atan(x); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> atan2(T y, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_atan2(y, x));
+  else return atan2(static_cast<common>(y), static_cast<common>(x));
+}
+inline float atan2f(float y, float x) { return atan2(y, x); }
+inline long double atan2l(long double y, long double x) { return atan2(y, x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> cosh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_cosh(x));
+  else return cosh(static_cast<common>(x));
+}
+inline float coshf(float x) { return cosh(x); }
+inline long double coshl(long double x) { return cosh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sinh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sinh(x));
+  else return sinh(static_cast<common>(x));
+}
+inline float sinhf(float x) { return sinh(x); }
+inline long double sinhl(long double x) { return sinh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> tanh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_tanh(x));
+  else return tanh(static_cast<common>(x));
+}
+inline float tanhf(float x) { return tanh(x); }
+inline long double tanhl(long double x) { return tanh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> acosh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_acosh(x));
+  else return acosh(static_cast<common>(x));
+}
+inline float acoshf(float x) { return acosh(x); }
+inline long double acoshl(long double x) { return acosh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> asinh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_asinh(x));
+  else return asinh(static_cast<common>(x));
+}
+inline float asinhf(float x) { return asinh(x); }
+inline long double asinhl(long double x) { return asinh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> atanh(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_atanh(x));
+  else return atanh(static_cast<common>(x));
+}
+inline float atanhf(float x) { return atanh(x); }
+inline long double atanhl(long double x) { return atanh(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> exp(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_exp(x));
+  else return exp(static_cast<common>(x));
+}
+inline float expf(float x) { return exp(x); }
+inline long double expl(long double x) { return exp(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> exp2(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_exp2(x));
+  else return exp2(static_cast<common>(x));
+}
+inline float exp2f(float x) { return exp2(x); }
+inline long double exp2l(long double x) { return exp2(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> expm1(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_expm1(x));
+  else return expm1(static_cast<common>(x));
+}
+inline float expm1f(float x) { return expm1(x); }
+inline long double expm1l(long double x) { return expm1(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> log(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_log(x));
+  else return log(static_cast<common>(x));
+}
+inline float logf(float x) { return log(x); }
+inline long double logl(long double x) { return log(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> log2(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_log2(x));
+  else return log2(static_cast<common>(x));
+}
+inline float log2f(float x) { return log2(x); }
+inline long double log2l(long double x) { return log2(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> log10(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_log10(x));
+  else return log10(static_cast<common>(x));
+}
+inline float log10f(float x) { return log10(x); }
+inline long double log10l(long double x) { return log10(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> log1p(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_log1p(x));
+  else return log1p(static_cast<common>(x));
+}
+inline float log1pf(float x) { return log1p(x); }
+inline long double log1pl(long double x) { return log1p(x); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> pow(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_pow(x, y));
+  else return pow(static_cast<common>(x), static_cast<common>(y));
+}
+inline float powf(float x, float y) { return pow(x, y); }
+inline long double powl(long double x, long double y) { return pow(x, y); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sqrt(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sqrt(x));
+  else return sqrt(static_cast<common>(x));
+}
+inline float sqrtf(float x) { return sqrt(x); }
+inline long double sqrtl(long double x) { return sqrt(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> cbrt(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_cbrt(x));
+  else return cbrt(static_cast<common>(x));
+}
+inline float cbrtf(float x) { return cbrt(x); }
+inline long double cbrtl(long double x) { return cbrt(x); }
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> hypot(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_hypot(x, y));
+  else return hypot(static_cast<common>(x), static_cast<common>(y));
+}
+template<__ywlib_arithmetic T, __ywlib_arithmetic U, __ywlib_arithmetic V> __ywlib_math_type<T, U, V> hypot(T x, U y, V z) {
+  using common = __ywlib_math_type<T, U, V>;
+  if constexpr (__ywlib_same_as<common, T, U, V>) return __ywlib_dummy({}, __ywlib_hypot(x, y, z));
+  else return hypot(static_cast<common>(x), static_cast<common>(y), static_cast<common>(z));
+}
+inline float hypotf(float x, float y) { return hypot(x, y); }
+inline long double hypotl(long double x, long double y) { return hypot(x, y); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> erf(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_erf(x));
+  else return erf(static_cast<common>(x));
+}
+inline float erff(float x) { return erf(x); }
+inline long double erfl(long double x) { return erf(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> erfc(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_erfc(x));
+  else return erfc(static_cast<common>(x));
+}
+inline float erfcf(float x) { return erfc(x); }
+inline long double erfcf(long double x) { return erfc(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> lgamma(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_lgamma(x));
+  else return lgamma(static_cast<common>(x));
+}
+inline float lgammaf(float x) { return lgamma(x); }
+inline long double lgammal(long double x) { return lgamma(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> tgamma(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_tgamma(x));
+  else return tgamma(static_cast<common>(x));
+}
+inline float tgammaf(float x) { return tgamma(x); }
+inline long double tgammal(long double x) { return tgamma(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> nearbyint(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_nearbyint(x));
+  else return nearbyint(static_cast<common>(x));
+}
+inline float nearbyintf(float x) { return nearbyint(x); }
+inline long double nearbyintl(long double x) { return nearbyint(x); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> rint(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_rint(x));
+  else return rint(static_cast<common>(x));
+}
+inline float rintf(float x) { return rint(x); }
+inline long double rintl(long double x) { return rint(x); }
+
+template<__ywlib_arithmetic T> constexpr long lrint(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_lrint(x));
+  else return lrint(static_cast<common>(x));
+}
+inline long lrintf(float x) { return lrint(x); }
+inline long lrintl(long double x) { return lrint(x); }
+
+template<__ywlib_arithmetic T> constexpr long long llrint(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_llrint(x));
+  else return llrint(static_cast<common>(x));
+}
+inline long long llrintf(float x) { return llrint(x); }
+inline long long llrintl(long double x) { return llrint(x); }
+
+inline double nan(const char* str) { return __ywlib_dummy({}, ::nan(str)); }
+inline float nanf(const char* str) { return __ywlib_dummy({}, ::nanf(str)); }
+inline long double nanl(const char* str) { return __ywlib_dummy({}, ::nanl(str)); }
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> assoc_lagurre(unsigned n, unsigned m, T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_assoc_lagurre(n, m, x));
+  else return assoc_lagurre(n, m, static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> assoc_legendre(unsigned l, unsigned m, T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_assoc_legendre(l, m, x));
+  else return assoc_legendre(l, m, static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> beta(T x, U y) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_beta(x, y));
+  else return beta(static_cast<common>(x), static_cast<common>(y));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> comp_ellint_1(T k) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_comp_ellint_1(k));
+  else return comp_ellint_1(static_cast<common>(k));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> comp_ellint_2(T k) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_comp_ellint_2(k));
+  else return comp_ellint_2(static_cast<common>(k));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> comp_ellint_3(T k, U nu) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_comp_ellint_3(k, nu));
+  else return comp_ellint_3(static_cast<common>(k), static_cast<common>(nu));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T> cyl_bessel_i(T nu, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_cyl_bessel_i(nu, x));
+  else return cyl_bessel_i(static_cast<common>(nu), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> cyl_bessel_j(T nu, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_cyl_bessel_j(nu, x));
+  else return cyl_bessel_j(static_cast<common>(nu), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> cyl_bessel_k(T nu, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_cyl_bessel_k(nu, x));
+  else return cyl_bessel_k(static_cast<common>(nu), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> cyl_neumann(T nu, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_cyl_neumann(nu, x));
+  else return cyl_neumann(static_cast<common>(nu), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> ellint_1(T k, U phi) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_ellint_1(k, phi));
+  else return ellint_1(static_cast<common>(k), static_cast<common>(phi));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> ellint_2(T k, U phi) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_ellint_2(k, phi));
+  else return ellint_2(static_cast<common>(k), static_cast<common>(phi));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U, __ywlib_arithmetic V> __ywlib_math_type<T, U, V> ellint_3(T k, U nu, V phi) {
+  using common = __ywlib_math_type<T, U, V>;
+  if constexpr (__ywlib_same_as<common, T, U, V>) return __ywlib_dummy({}, __ywlib_ellint_3(k, nu, phi));
+  else return ellint_3(static_cast<common>(k), static_cast<common>(nu), static_cast<common>(phi));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> expint(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_expint(x));
+  else return expint(static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> hermite(T n, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_hermite(n, x));
+  else return hermite(static_cast<common>(n), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> laguerre(T n, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_laguerre(n, x));
+  else return laguerre(static_cast<common>(n), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T, __ywlib_arithmetic U> __ywlib_math_type<T, U> legendre(T l, U x) {
+  using common = __ywlib_math_type<T, U>;
+  if constexpr (__ywlib_same_as<common, T, U>) return __ywlib_dummy({}, __ywlib_legendre(l, x));
+  else return legendre(static_cast<common>(l), static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> riemann_zeta(T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_riemann_zeta(x));
+  else return riemann_zeta(static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sph_bessel(unsigned n, T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sph_bessel(n, x));
+  else return sph_bessel(n, static_cast<common>(x));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sph_legendre(unsigned l, unsigned m, T theta) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sph_legendre(l, m, theta));
+  else return sph_legendre(l, m, static_cast<common>(theta));
+}
+
+template<__ywlib_arithmetic T> __ywlib_math_type<T> sph_neumann(unsigned n, T x) {
+  using common = __ywlib_math_type<T>;
+  if constexpr (__ywlib_same_as<common, T>) return __ywlib_dummy({}, __ywlib_sph_neumann(n, x));
+  else return sph_neumann(n, static_cast<common>(x));
+}
+} // namespace std
+#endif

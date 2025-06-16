@@ -1,0 +1,93 @@
+#pragma once
+
+#ifndef __ywlib_import
+#ifndef __ywlib_export
+namespace std {
+using size_t = unsigned long long;
+void* __cdecl memcpy(void* s1, const void* s2, size_t n);
+void* __cdecl memmove(void* s1, const void* s2, size_t n);
+char* __cdecl strcpy(char* s1, const char* s2);
+char* __cdecl strncpy(char* s1, const char* s2, size_t n);
+char* __cdecl strcat(char* s1, const char* s2);
+char* __cdecl strncat(char* s1, const char* s2, size_t n);
+int __cdecl memcmp(const void* s1, const void* s2, size_t n);
+int __cdecl strcmp(const char* s1, const char* s2);
+int __cdecl strcoll(const char* s1, const char* s2);
+int __cdecl strncmp(const char* s1, const char* s2, size_t n);
+size_t __cdecl strxfrm(char* s1, const char* s2, size_t n);
+const void* __cdecl memchr(const void* s, int c, size_t n);
+void* __cdecl memchr(void* s, int c, size_t n);
+const char* __cdecl strchr(const char* s, int c);
+char* __cdecl strchr(char* s, int c);
+size_t __cdecl strcspn(const char* s1, const char* s2);
+const char* __cdecl strpbrk(const char* s1, const char* s2);
+char* __cdecl strpbrk(char* s1, const char* s2);
+const char* __cdecl strrchr(const char* s, int c);
+char* __cdecl strrchr(char* s, int c);
+size_t __cdecl strspn(const char* s1, const char* s2);
+const char* __cdecl strstr(const char* s1, const char* s2);
+char* __cdecl strstr(char* s1, const char* s2);
+char* __cdecl strtok(char* s1, const char* s2);
+void* __cdecl memset(void* s, int c, size_t n);
+char* __cdecl strerror(int errnum);
+size_t __cdecl strlen(const char* s);
+} // namespace std
+#else
+extern "C" {
+using size_t = unsigned long long;
+void* __cdecl memcpy(void* s1, const void* s2, size_t n);
+void* __cdecl memmove(void* s1, const void* s2, size_t n);
+char* __cdecl strcpy(char* s1, const char* s2);
+char* __cdecl strncpy(char* s1, const char* s2, size_t n);
+char* __cdecl strcat(char* s1, const char* s2);
+char* __cdecl strncat(char* s1, const char* s2, size_t n);
+int __cdecl memcmp(const void* s1, const void* s2, size_t n);
+int __cdecl strcmp(const char* s1, const char* s2);
+int __cdecl strcoll(const char* s1, const char* s2);
+int __cdecl strncmp(const char* s1, const char* s2, size_t n);
+size_t __cdecl strxfrm(char* s1, const char* s2, size_t n);
+const void* __cdecl memchr(const void* s, int c, size_t n);
+const char* __cdecl strchr(const char* s, int c);
+size_t __cdecl strcspn(const char* s1, const char* s2);
+const char* __cdecl strpbrk(const char* s1, const char* s2);
+const char* __cdecl strrchr(const char* s, int c);
+size_t __cdecl strspn(const char* s1, const char* s2);
+const char* __cdecl strstr(const char* s1, const char* s2);
+char* __cdecl strtok(char* s1, const char* s2);
+void* __cdecl memset(void* s, int c, size_t n);
+char* __cdecl strerror(int errnum);
+size_t __cdecl strlen(const char* s);
+}
+export namespace std {
+using ::memchr;
+using ::memcmp;
+using ::memcpy;
+using ::memmove;
+using ::memset;
+using ::size_t;
+using ::strcat;
+using ::strchr;
+using ::strcmp;
+using ::strcoll;
+using ::strcpy;
+using ::strcspn;
+using ::strerror;
+using ::strlen;
+using ::strncat;
+using ::strncmp;
+using ::strncpy;
+using ::strpbrk;
+using ::strrchr;
+using ::strspn;
+using ::strstr;
+using ::strtok;
+using ::strxfrm;
+
+inline void* __cdecl memchr(void* s, int c, size_t n) noexcept { return const_cast<void*>(::memchr(const_cast<const void*>(s), c, n)); }
+inline char* __cdecl strchr(char* s, int c) noexcept { return const_cast<char*>(::strchr(const_cast<const char*>(s), c)); }
+inline char* __cdecl strpbrk(char* s1, const char* s2) noexcept { return const_cast<char*>(::strpbrk(const_cast<const char*>(s1), s2)); }
+inline char* __cdecl strrchr(char* s, int c) noexcept { return const_cast<char*>(::strrchr(const_cast<const char*>(s), c)); }
+inline char* __cdecl strstr(char* s1, const char* s2) noexcept { return const_cast<char*>(::strstr(const_cast<const char*>(s1), s2)); }
+} // namespace std
+#endif
+#endif
