@@ -14,10 +14,10 @@ using namespace yw;
 // }
 
 
-yw::main::main(int width = 1200, int height = 800) {
-  ::MessageBoxW(0, ::GetCommandLineW(), L"Command Line", 0);
-  // window.show();
-  // MSG msg;
-  // while (::GetMessageW(&msg, nullptr, 0, 0))
-  //   ::TranslateMessage(&msg), ::DispatchMessageW(&msg);
-}
+// yw::main::main(int width = 1200, int height = 800) {
+//   ::MessageBoxW(0, ::GetCommandLineW(), L"Command Line", 0);
+//   // window.show();
+//   // MSG msg;
+//   // while (::GetMessageW(&msg, nullptr, 0, 0))
+//   //   ::TranslateMessage(&msg), ::DispatchMessageW(&msg);
+// }

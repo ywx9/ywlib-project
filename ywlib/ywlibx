@@ -1,399 +1,383 @@
+#pragma once
 #include <ywlib>
 
-// MARK: NO NEED TO CALL
+#include <yw-args.hpp>
+#include <yw-com.hpp>
+#include <yw-value.hpp>
 
-namespace yw {
-template<typename Fn> requires requires(const Fn& f) { f.operator()(); } struct no_need_to_call : public Fn {
-  constexpr operator std::invoke_result_t<Fn>() const noexcept(std::is_nothrow_invocable_v<Fn>) { return Fn::operator()(); }
-  template<typename T> explicit constexpr operator T() const noexcept(std::is_nothrow_convertible_v<Fn, T>)
-    requires requires { static_cast<T>(Fn::operator()()); } { return static_cast<T>(Fn::operator()()); }
-  template<typename... Ts> constexpr std::invoke_result_t<const Fn&, Ts...> operator()(Ts&&... Args) const
-    noexcept(std::is_nothrow_invocable_v<Fn, Ts...>) { return Fn::operator()(static_cast<Ts&&>(Args)...); }
-  template<typename Ct, typename Tr> friend std::basic_ostream<Ct, Tr>& operator<<(
-    std::basic_ostream<Ct, Tr>& os, const no_need_to_call& f) { return os << f.operator()(); }
-};
-}
-namespace std {
-template<typename Ct, typename Fn> struct formatter<yw::no_need_to_call<Fn>, Ct> {
-  std::formatter<std::decay_t<std::invoke_result_t<Fn>>, Ct> inner_formatter;
-  constexpr auto parse(auto& ctx) { return inner_formatter.parse(ctx); }
-  auto format(const yw::no_need_to_call<Fn>& f, auto& ctx) const {
-    return inner_formatter.format(f.operator()(), ctx);
-  }
-};
-}
+// // MARK: NO NEED TO CALL
 
-namespace yw { // MARK: WINDOW MESSAGES
+// namespace yw { // MARK: WINDOW MESSAGES
 
-enum class wmessage : unsigned {
-  wm_null                           = 0x0000,
-  wm_create                         = 0x0001,
-  wm_destroy                        = 0x0002,
-  wm_move                           = 0x0003,
-  wm_size                           = 0x0005,
-  wm_activate                       = 0x0006,
-  wm_setfocus                       = 0x0007,
-  wm_killfocus                      = 0x0008,
-  wm_enable                         = 0x000a,
-  wm_setredraw                      = 0x000b,
-  wm_settext                        = 0x000c,
-  wm_gettext                        = 0x000d,
-  wm_gettextlength                  = 0x000e,
-  wm_paint                          = 0x000f,
-  wm_close                          = 0x0010,
-  wm_queryendsession                = 0x0011,
-  wm_quit                           = 0x0012,
-  wm_queryopen                      = 0x0013,
-  wm_erasebkgnd                     = 0x0014,
-  wm_syscolorchange                 = 0x0015,
-  wm_endsession                     = 0x0016,
-  wm_showwindow                     = 0x0018,
-  wm_wininichange                   = 0x001a,
-  wm_devmodechange                  = 0x001b,
-  wm_activateapp                    = 0x001c,
-  wm_fontchange                     = 0x001d,
-  wm_timechange                     = 0x001e,
-  wm_cancelmode                     = 0x001f,
-  wm_setcursor                      = 0x0020,
-  wm_mouseactivate                  = 0x0021,
-  wm_childactivate                  = 0x0022,
-  wm_queuesync                      = 0x0023,
-  wm_getminmaxinfo                  = 0x0024,
-  wm_painticon                      = 0x0026,
-  wm_iconerasebkgnd                 = 0x0027,
-  wm_nextdlgctl                     = 0x0028,
-  wm_spoolerstatus                  = 0x002a,
-  wm_drawitem                       = 0x002b,
-  wm_measureitem                    = 0x002c,
-  wm_deleteitem                     = 0x002d,
-  wm_vkeytoitem                     = 0x002e,
-  wm_chartoitem                     = 0x002f,
-  wm_setfont                        = 0x0030,
-  wm_getfont                        = 0x0031,
-  wm_sethotkey                      = 0x0032,
-  wm_gethotkey                      = 0x0033,
-  wm_querydragicon                  = 0x0037,
-  wm_compareitem                    = 0x0039,
-  wm_getobject                      = 0x003d,
-  wm_compacting                     = 0x0041,
-  wm_commnotify                     = 0x0044,
-  wm_windowposchanging              = 0x0046,
-  wm_windowposchanged               = 0x0047,
-  wm_power                          = 0x0048,
-  wm_copydata                       = 0x004a,
-  wm_canceljournal                  = 0x004b,
-  wm_notify                         = 0x004e,
-  wm_inputlangchangerequest         = 0x0050,
-  wm_inputlangchange                = 0x0051,
-  wm_tcard                          = 0x0052,
-  wm_help                           = 0x0053,
-  wm_userchanged                    = 0x0054,
-  wm_notifyformat                   = 0x0055,
-  wm_contextmenu                    = 0x007b,
-  wm_stylechanging                  = 0x007c,
-  wm_stylechanged                   = 0x007d,
-  wm_displaychange                  = 0x007e,
-  wm_geticon                        = 0x007f,
-  wm_seticon                        = 0x0080,
-  wm_nccreate                       = 0x0081,
-  wm_ncdestroy                      = 0x0082,
-  wm_nccalcsize                     = 0x0083,
-  wm_nchittest                      = 0x0084,
-  wm_ncpaint                        = 0x0085,
-  wm_ncactivate                     = 0x0086,
-  wm_getdlgcode                     = 0x0087,
-  wm_syncpaint                      = 0x0088,
-  wm_ncmousemove                    = 0x00a0,
-  wm_nclbuttondown                  = 0x00a1,
-  wm_nclbuttonup                    = 0x00a2,
-  wm_nclbuttondblclk                = 0x00a3,
-  wm_ncrbuttondown                  = 0x00a4,
-  wm_ncrbuttonup                    = 0x00a5,
-  wm_ncrbuttondblclk                = 0x00a6,
-  wm_ncmbuttondown                  = 0x00a7,
-  wm_ncmbuttonup                    = 0x00a8,
-  wm_ncmbuttondblclk                = 0x00a9,
-  wm_ncxbuttondown                  = 0x00ab,
-  wm_ncxbuttonup                    = 0x00ac,
-  wm_ncxbuttondblclk                = 0x00ad,
-  wm_input_device_change            = 0x00fe,
-  wm_input                          = 0x00ff,
-  wm_keyfirst                       = 0x0100,
-  wm_keydown                        = 0x0100,
-  wm_keyup                          = 0x0101,
-  wm_char                           = 0x0102,
-  wm_deadchar                       = 0x0103,
-  wm_syskeydown                     = 0x0104,
-  wm_syskeyup                       = 0x0105,
-  wm_syschar                        = 0x0106,
-  wm_sysdeadchar                    = 0x0107,
-  wm_unichar                        = 0x0109,
-  wm_keylast                        = 0x0109,
-  wm_ime_startcomposition           = 0x010d,
-  wm_ime_endcomposition             = 0x010e,
-  wm_ime_composition                = 0x010f,
-  wm_ime_keylast                    = 0x010f,
-  wm_initdialog                     = 0x0110,
-  wm_command                        = 0x0111,
-  wm_syscommand                     = 0x0112,
-  wm_timer                          = 0x0113,
-  wm_hscroll                        = 0x0114,
-  wm_vscroll                        = 0x0115,
-  wm_initmenu                       = 0x0116,
-  wm_initmenupopup                  = 0x0117,
-  wm_gesture                        = 0x0119,
-  wm_gesturenotify                  = 0x011a,
-  wm_menuselect                     = 0x011f,
-  wm_menuchar                       = 0x0120,
-  wm_enteridle                      = 0x0121,
-  wm_menurbuttonup                  = 0x0122,
-  wm_menudrag                       = 0x0123,
-  wm_menugetobject                  = 0x0124,
-  wm_uninitmenupopup                = 0x0125,
-  wm_menucommand                    = 0x0126,
-  wm_changeuistate                  = 0x0127,
-  wm_updateuistate                  = 0x0128,
-  wm_queryuistate                   = 0x0129,
-  wm_ctlcolormsgbox                 = 0x0132,
-  wm_ctlcoloredit                   = 0x0133,
-  wm_ctlcolorlistbox                = 0x0134,
-  wm_ctlcolorbtn                    = 0x0135,
-  wm_ctlcolordlg                    = 0x0136,
-  wm_ctlcolorscrollbar              = 0x0137,
-  wm_ctlcolorstatic                 = 0x0138,
-  mn_gethmenu                       = 0x01e1,
-  wm_mousefirst                     = 0x0200,
-  wm_mousemove                      = 0x0200,
-  wm_lbuttondown                    = 0x0201,
-  wm_lbuttonup                      = 0x0202,
-  wm_lbuttondblclk                  = 0x0203,
-  wm_rbuttondown                    = 0x0204,
-  wm_rbuttonup                      = 0x0205,
-  wm_rbuttondblclk                  = 0x0206,
-  wm_mbuttondown                    = 0x0207,
-  wm_mbuttonup                      = 0x0208,
-  wm_mbuttondblclk                  = 0x0209,
-  wm_mousewheel                     = 0x020a,
-  wm_xbuttondown                    = 0x020b,
-  wm_xbuttonup                      = 0x020c,
-  wm_xbuttondblclk                  = 0x020d,
-  wm_mousehwheel                    = 0x020e,
-  wm_mouselast                      = 0x020e,
-  wm_parentnotify                   = 0x0210,
-  wm_entermenuloop                  = 0x0211,
-  wm_exitmenuloop                   = 0x0212,
-  wm_nextmenu                       = 0x0213,
-  wm_sizing                         = 0x0214,
-  wm_capturechanged                 = 0x0215,
-  wm_moving                         = 0x0216,
-  wm_powerbroadcast                 = 0x0218,
-  wm_devicechange                   = 0x0219,
-  wm_mdicreate                      = 0x0220,
-  wm_mdidestroy                     = 0x0221,
-  wm_mdiactivate                    = 0x0222,
-  wm_mdirestore                     = 0x0223,
-  wm_mdinext                        = 0x0224,
-  wm_mdimaximize                    = 0x0225,
-  wm_mditile                        = 0x0226,
-  wm_mdicascade                     = 0x0227,
-  wm_mdiiconarrange                 = 0x0228,
-  wm_mdigetactive                   = 0x0229,
-  wm_mdisetmenu                     = 0x0230,
-  wm_entersizemove                  = 0x0231,
-  wm_exitsizemove                   = 0x0232,
-  wm_dropfiles                      = 0x0233,
-  wm_mdirefreshmenu                 = 0x0234,
-  wm_pointerdevicechange            = 0x238,
-  wm_pointerdeviceinrange           = 0x239,
-  wm_pointerdeviceoutofrange        = 0x23a,
-  wm_touch                          = 0x0240,
-  wm_ncpointerupdate                = 0x0241,
-  wm_ncpointerdown                  = 0x0242,
-  wm_ncpointerup                    = 0x0243,
-  wm_pointerupdate                  = 0x0245,
-  wm_pointerdown                    = 0x0246,
-  wm_pointerup                      = 0x0247,
-  wm_pointerenter                   = 0x0249,
-  wm_pointerleave                   = 0x024a,
-  wm_pointeractivate                = 0x024b,
-  wm_pointercapturechanged          = 0x024c,
-  wm_touchhittesting                = 0x024d,
-  wm_pointerwheel                   = 0x024e,
-  wm_pointerhwheel                  = 0x024f,
-  dm_pointerhittest                 = 0x0250,
-  wm_pointerroutedto                = 0x0251,
-  wm_pointerroutedaway              = 0x0252,
-  wm_pointerroutedreleased          = 0x0253,
-  wm_ime_setcontext                 = 0x0281,
-  wm_ime_notify                     = 0x0282,
-  wm_ime_control                    = 0x0283,
-  wm_ime_compositionfull            = 0x0284,
-  wm_ime_select                     = 0x0285,
-  wm_ime_char                       = 0x0286,
-  wm_ime_request                    = 0x0288,
-  wm_ime_keydown                    = 0x0290,
-  wm_ime_keyup                      = 0x0291,
-  wm_ncmousehover                   = 0x02a0,
-  wm_mousehover                     = 0x02a1,
-  wm_ncmouseleave                   = 0x02a2,
-  wm_mouseleave                     = 0x02a3,
-  wm_wtssession_change              = 0x02b1,
-  wm_tablet_first                   = 0x02c0,
-  wm_tablet_last                    = 0x02df,
-  wm_dpichanged                     = 0x02e0,
-  wm_dpichanged_beforeparent        = 0x02e2,
-  wm_dpichanged_afterparent         = 0x02e3,
-  wm_getdpiscaledsize               = 0x02e4,
-  wm_cut                            = 0x0300,
-  wm_copy                           = 0x0301,
-  wm_paste                          = 0x0302,
-  wm_clear                          = 0x0303,
-  wm_undo                           = 0x0304,
-  wm_renderformat                   = 0x0305,
-  wm_renderallformats               = 0x0306,
-  wm_destroyclipboard               = 0x0307,
-  wm_drawclipboard                  = 0x0308,
-  wm_paintclipboard                 = 0x0309,
-  wm_vscrollclipboard               = 0x030a,
-  wm_sizeclipboard                  = 0x030b,
-  wm_askcbformatname                = 0x030c,
-  wm_changecbchain                  = 0x030d,
-  wm_hscrollclipboard               = 0x030e,
-  wm_querynewpalette                = 0x030f,
-  wm_paletteischanging              = 0x0310,
-  wm_palettechanged                 = 0x0311,
-  wm_hotkey                         = 0x0312,
-  wm_print                          = 0x0317,
-  wm_printclient                    = 0x0318,
-  wm_appcommand                     = 0x0319,
-  wm_themechanged                   = 0x031a,
-  wm_clipboardupdate                = 0x031d,
-  wm_dwmcompositionchanged          = 0x031e,
-  wm_dwmncrenderingchanged          = 0x031f,
-  wm_dwmcolorizationcolorchanged    = 0x0320,
-  wm_dwmwindowmaximizedchange       = 0x0321,
-  wm_dwmsendiconicthumbnail         = 0x0323,
-  wm_dwmsendiconiclivepreviewbitmap = 0x0326,
-  wm_gettitlebarinfoex              = 0x033f,
-  wm_handheldfirst                  = 0x0358,
-  wm_handheldlast                   = 0x035f,
-  wm_afxfirst                       = 0x0360,
-  wm_afxlast                        = 0x037f,
-  wm_penwinfirst                    = 0x0380,
-  wm_penwinlast                     = 0x038f,
-  wm_user                           = 0x0400,
-  wm_app                            = 0x8000,
-};
-using enum wmessage;
-}
+// enum class wmessage : unsigned {
+//   wm_null                           = 0x0000,
+//   wm_create                         = 0x0001,
+//   wm_destroy                        = 0x0002,
+//   wm_move                           = 0x0003,
+//   wm_size                           = 0x0005,
+//   wm_activate                       = 0x0006,
+//   wm_setfocus                       = 0x0007,
+//   wm_killfocus                      = 0x0008,
+//   wm_enable                         = 0x000a,
+//   wm_setredraw                      = 0x000b,
+//   wm_settext                        = 0x000c,
+//   wm_gettext                        = 0x000d,
+//   wm_gettextlength                  = 0x000e,
+//   wm_paint                          = 0x000f,
+//   wm_close                          = 0x0010,
+//   wm_queryendsession                = 0x0011,
+//   wm_quit                           = 0x0012,
+//   wm_queryopen                      = 0x0013,
+//   wm_erasebkgnd                     = 0x0014,
+//   wm_syscolorchange                 = 0x0015,
+//   wm_endsession                     = 0x0016,
+//   wm_showwindow                     = 0x0018,
+//   wm_wininichange                   = 0x001a,
+//   wm_devmodechange                  = 0x001b,
+//   wm_activateapp                    = 0x001c,
+//   wm_fontchange                     = 0x001d,
+//   wm_timechange                     = 0x001e,
+//   wm_cancelmode                     = 0x001f,
+//   wm_setcursor                      = 0x0020,
+//   wm_mouseactivate                  = 0x0021,
+//   wm_childactivate                  = 0x0022,
+//   wm_queuesync                      = 0x0023,
+//   wm_getminmaxinfo                  = 0x0024,
+//   wm_painticon                      = 0x0026,
+//   wm_iconerasebkgnd                 = 0x0027,
+//   wm_nextdlgctl                     = 0x0028,
+//   wm_spoolerstatus                  = 0x002a,
+//   wm_drawitem                       = 0x002b,
+//   wm_measureitem                    = 0x002c,
+//   wm_deleteitem                     = 0x002d,
+//   wm_vkeytoitem                     = 0x002e,
+//   wm_chartoitem                     = 0x002f,
+//   wm_setfont                        = 0x0030,
+//   wm_getfont                        = 0x0031,
+//   wm_sethotkey                      = 0x0032,
+//   wm_gethotkey                      = 0x0033,
+//   wm_querydragicon                  = 0x0037,
+//   wm_compareitem                    = 0x0039,
+//   wm_getobject                      = 0x003d,
+//   wm_compacting                     = 0x0041,
+//   wm_commnotify                     = 0x0044,
+//   wm_windowposchanging              = 0x0046,
+//   wm_windowposchanged               = 0x0047,
+//   wm_power                          = 0x0048,
+//   wm_copydata                       = 0x004a,
+//   wm_canceljournal                  = 0x004b,
+//   wm_notify                         = 0x004e,
+//   wm_inputlangchangerequest         = 0x0050,
+//   wm_inputlangchange                = 0x0051,
+//   wm_tcard                          = 0x0052,
+//   wm_help                           = 0x0053,
+//   wm_userchanged                    = 0x0054,
+//   wm_notifyformat                   = 0x0055,
+//   wm_contextmenu                    = 0x007b,
+//   wm_stylechanging                  = 0x007c,
+//   wm_stylechanged                   = 0x007d,
+//   wm_displaychange                  = 0x007e,
+//   wm_geticon                        = 0x007f,
+//   wm_seticon                        = 0x0080,
+//   wm_nccreate                       = 0x0081,
+//   wm_ncdestroy                      = 0x0082,
+//   wm_nccalcsize                     = 0x0083,
+//   wm_nchittest                      = 0x0084,
+//   wm_ncpaint                        = 0x0085,
+//   wm_ncactivate                     = 0x0086,
+//   wm_getdlgcode                     = 0x0087,
+//   wm_syncpaint                      = 0x0088,
+//   wm_ncmousemove                    = 0x00a0,
+//   wm_nclbuttondown                  = 0x00a1,
+//   wm_nclbuttonup                    = 0x00a2,
+//   wm_nclbuttondblclk                = 0x00a3,
+//   wm_ncrbuttondown                  = 0x00a4,
+//   wm_ncrbuttonup                    = 0x00a5,
+//   wm_ncrbuttondblclk                = 0x00a6,
+//   wm_ncmbuttondown                  = 0x00a7,
+//   wm_ncmbuttonup                    = 0x00a8,
+//   wm_ncmbuttondblclk                = 0x00a9,
+//   wm_ncxbuttondown                  = 0x00ab,
+//   wm_ncxbuttonup                    = 0x00ac,
+//   wm_ncxbuttondblclk                = 0x00ad,
+//   wm_input_device_change            = 0x00fe,
+//   wm_input                          = 0x00ff,
+//   wm_keyfirst                       = 0x0100,
+//   wm_keydown                        = 0x0100,
+//   wm_keyup                          = 0x0101,
+//   wm_char                           = 0x0102,
+//   wm_deadchar                       = 0x0103,
+//   wm_syskeydown                     = 0x0104,
+//   wm_syskeyup                       = 0x0105,
+//   wm_syschar                        = 0x0106,
+//   wm_sysdeadchar                    = 0x0107,
+//   wm_unichar                        = 0x0109,
+//   wm_keylast                        = 0x0109,
+//   wm_ime_startcomposition           = 0x010d,
+//   wm_ime_endcomposition             = 0x010e,
+//   wm_ime_composition                = 0x010f,
+//   wm_ime_keylast                    = 0x010f,
+//   wm_initdialog                     = 0x0110,
+//   wm_command                        = 0x0111,
+//   wm_syscommand                     = 0x0112,
+//   wm_timer                          = 0x0113,
+//   wm_hscroll                        = 0x0114,
+//   wm_vscroll                        = 0x0115,
+//   wm_initmenu                       = 0x0116,
+//   wm_initmenupopup                  = 0x0117,
+//   wm_gesture                        = 0x0119,
+//   wm_gesturenotify                  = 0x011a,
+//   wm_menuselect                     = 0x011f,
+//   wm_menuchar                       = 0x0120,
+//   wm_enteridle                      = 0x0121,
+//   wm_menurbuttonup                  = 0x0122,
+//   wm_menudrag                       = 0x0123,
+//   wm_menugetobject                  = 0x0124,
+//   wm_uninitmenupopup                = 0x0125,
+//   wm_menucommand                    = 0x0126,
+//   wm_changeuistate                  = 0x0127,
+//   wm_updateuistate                  = 0x0128,
+//   wm_queryuistate                   = 0x0129,
+//   wm_ctlcolormsgbox                 = 0x0132,
+//   wm_ctlcoloredit                   = 0x0133,
+//   wm_ctlcolorlistbox                = 0x0134,
+//   wm_ctlcolorbtn                    = 0x0135,
+//   wm_ctlcolordlg                    = 0x0136,
+//   wm_ctlcolorscrollbar              = 0x0137,
+//   wm_ctlcolorstatic                 = 0x0138,
+//   mn_gethmenu                       = 0x01e1,
+//   wm_mousefirst                     = 0x0200,
+//   wm_mousemove                      = 0x0200,
+//   wm_lbuttondown                    = 0x0201,
+//   wm_lbuttonup                      = 0x0202,
+//   wm_lbuttondblclk                  = 0x0203,
+//   wm_rbuttondown                    = 0x0204,
+//   wm_rbuttonup                      = 0x0205,
+//   wm_rbuttondblclk                  = 0x0206,
+//   wm_mbuttondown                    = 0x0207,
+//   wm_mbuttonup                      = 0x0208,
+//   wm_mbuttondblclk                  = 0x0209,
+//   wm_mousewheel                     = 0x020a,
+//   wm_xbuttondown                    = 0x020b,
+//   wm_xbuttonup                      = 0x020c,
+//   wm_xbuttondblclk                  = 0x020d,
+//   wm_mousehwheel                    = 0x020e,
+//   wm_mouselast                      = 0x020e,
+//   wm_parentnotify                   = 0x0210,
+//   wm_entermenuloop                  = 0x0211,
+//   wm_exitmenuloop                   = 0x0212,
+//   wm_nextmenu                       = 0x0213,
+//   wm_sizing                         = 0x0214,
+//   wm_capturechanged                 = 0x0215,
+//   wm_moving                         = 0x0216,
+//   wm_powerbroadcast                 = 0x0218,
+//   wm_devicechange                   = 0x0219,
+//   wm_mdicreate                      = 0x0220,
+//   wm_mdidestroy                     = 0x0221,
+//   wm_mdiactivate                    = 0x0222,
+//   wm_mdirestore                     = 0x0223,
+//   wm_mdinext                        = 0x0224,
+//   wm_mdimaximize                    = 0x0225,
+//   wm_mditile                        = 0x0226,
+//   wm_mdicascade                     = 0x0227,
+//   wm_mdiiconarrange                 = 0x0228,
+//   wm_mdigetactive                   = 0x0229,
+//   wm_mdisetmenu                     = 0x0230,
+//   wm_entersizemove                  = 0x0231,
+//   wm_exitsizemove                   = 0x0232,
+//   wm_dropfiles                      = 0x0233,
+//   wm_mdirefreshmenu                 = 0x0234,
+//   wm_pointerdevicechange            = 0x238,
+//   wm_pointerdeviceinrange           = 0x239,
+//   wm_pointerdeviceoutofrange        = 0x23a,
+//   wm_touch                          = 0x0240,
+//   wm_ncpointerupdate                = 0x0241,
+//   wm_ncpointerdown                  = 0x0242,
+//   wm_ncpointerup                    = 0x0243,
+//   wm_pointerupdate                  = 0x0245,
+//   wm_pointerdown                    = 0x0246,
+//   wm_pointerup                      = 0x0247,
+//   wm_pointerenter                   = 0x0249,
+//   wm_pointerleave                   = 0x024a,
+//   wm_pointeractivate                = 0x024b,
+//   wm_pointercapturechanged          = 0x024c,
+//   wm_touchhittesting                = 0x024d,
+//   wm_pointerwheel                   = 0x024e,
+//   wm_pointerhwheel                  = 0x024f,
+//   dm_pointerhittest                 = 0x0250,
+//   wm_pointerroutedto                = 0x0251,
+//   wm_pointerroutedaway              = 0x0252,
+//   wm_pointerroutedreleased          = 0x0253,
+//   wm_ime_setcontext                 = 0x0281,
+//   wm_ime_notify                     = 0x0282,
+//   wm_ime_control                    = 0x0283,
+//   wm_ime_compositionfull            = 0x0284,
+//   wm_ime_select                     = 0x0285,
+//   wm_ime_char                       = 0x0286,
+//   wm_ime_request                    = 0x0288,
+//   wm_ime_keydown                    = 0x0290,
+//   wm_ime_keyup                      = 0x0291,
+//   wm_ncmousehover                   = 0x02a0,
+//   wm_mousehover                     = 0x02a1,
+//   wm_ncmouseleave                   = 0x02a2,
+//   wm_mouseleave                     = 0x02a3,
+//   wm_wtssession_change              = 0x02b1,
+//   wm_tablet_first                   = 0x02c0,
+//   wm_tablet_last                    = 0x02df,
+//   wm_dpichanged                     = 0x02e0,
+//   wm_dpichanged_beforeparent        = 0x02e2,
+//   wm_dpichanged_afterparent         = 0x02e3,
+//   wm_getdpiscaledsize               = 0x02e4,
+//   wm_cut                            = 0x0300,
+//   wm_copy                           = 0x0301,
+//   wm_paste                          = 0x0302,
+//   wm_clear                          = 0x0303,
+//   wm_undo                           = 0x0304,
+//   wm_renderformat                   = 0x0305,
+//   wm_renderallformats               = 0x0306,
+//   wm_destroyclipboard               = 0x0307,
+//   wm_drawclipboard                  = 0x0308,
+//   wm_paintclipboard                 = 0x0309,
+//   wm_vscrollclipboard               = 0x030a,
+//   wm_sizeclipboard                  = 0x030b,
+//   wm_askcbformatname                = 0x030c,
+//   wm_changecbchain                  = 0x030d,
+//   wm_hscrollclipboard               = 0x030e,
+//   wm_querynewpalette                = 0x030f,
+//   wm_paletteischanging              = 0x0310,
+//   wm_palettechanged                 = 0x0311,
+//   wm_hotkey                         = 0x0312,
+//   wm_print                          = 0x0317,
+//   wm_printclient                    = 0x0318,
+//   wm_appcommand                     = 0x0319,
+//   wm_themechanged                   = 0x031a,
+//   wm_clipboardupdate                = 0x031d,
+//   wm_dwmcompositionchanged          = 0x031e,
+//   wm_dwmncrenderingchanged          = 0x031f,
+//   wm_dwmcolorizationcolorchanged    = 0x0320,
+//   wm_dwmwindowmaximizedchange       = 0x0321,
+//   wm_dwmsendiconicthumbnail         = 0x0323,
+//   wm_dwmsendiconiclivepreviewbitmap = 0x0326,
+//   wm_gettitlebarinfoex              = 0x033f,
+//   wm_handheldfirst                  = 0x0358,
+//   wm_handheldlast                   = 0x035f,
+//   wm_afxfirst                       = 0x0360,
+//   wm_afxlast                        = 0x037f,
+//   wm_penwinfirst                    = 0x0380,
+//   wm_penwinlast                     = 0x038f,
+//   wm_user                           = 0x0400,
+//   wm_app                            = 0x8000,
+// };
+// using enum wmessage;
+// }
 
-namespace yw {
+// namespace yw {
 
-/// main functions
-class main {
-public:
-  /// instance handle
-  inline static const HANDLE hinstance = ::GetModuleHandleW(nullptr);
+// /// main functions
+// class main {
+// public:
+//   /// instance handle
+//   inline static const HANDLE hinstance = ::GetModuleHandleW(nullptr);
 
-  /// getting the desktop window size
-  inline static constexpr no_need_to_call monitor{[]() -> std::pair<int, int> {
-    RECT r;
-    ::GetWindowRect(::GetDesktopWindow(), &r);
-    return {r.right, r.bottom};
-  }};
+//   /// getting the desktop window size
+//   inline static constexpr no_need_to_call monitor{[]() -> std::pair<int, int> {
+//     RECT r;
+//     ::GetWindowRect(::GetDesktopWindow(), &r);
+//     return {r.right, r.bottom};
+//   }};
 
-  /// main-window class
-  class Window {
-    friend ::yw::main;
-    static constexpr int initsz                = 400;
-    static constexpr int exstyle               = WS_EX_ACCEPTFILES;
-    static constexpr int style                 = WS_CAPTION | WS_SYSMENU;
-    static constexpr const wchar_t* class_name = L"ywlib-main-window";
-    static size_t __stdcall class_proc(HANDLE hw, int msg, size_t wp, size_t lp) {
-    auto w = (Window*)::GetWindowLongPtrW(hw, -21);
-    if (w && w->userproc && w->userproc(*w, msg, wp, lp)) return 0;
-    else if (msg == WM_DROPFILES) {
-      auto drop = (HANDLE)wp;
-      POINT pt;
-      ::DragQueryPoint(drop, &pt);
-      auto n = ::DragQueryFileW(drop, 0xffffffff, nullptr, 0);
-      dropped.reserve(n), dropped.resize(n);
-      wchar_t s[FILENAME_MAX];
-      for (int i{}; i < n; ++i) dropped[i] = std::filesystem::path(std::wstring_view(s, ::DragQueryFileW(drop, i, s, FILENAME_MAX)));
-      ::DragFinish(drop);
-    } else if (msg == WM_DESTROY) ::PostQuitMessage(0);
-    return ::DefWindowProcW(hw, msg, wp, lp);
-  }
-    inline static ATOM wc                      = [](WNDCLASSEXW wc) {
-      wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-      wc.lpfnWndProc   = ::DefWindowProcW;
-      wc.hInstance     = hinstance;
-      wc.hCursor       = ::LoadCursorW(nullptr, IDC_ARROW);
-      wc.hbrBackground = (HANDLE)(COLOR_WINDOW + 1);
-      wc.lpszClassName = class_name;
-      return ::RegisterClassExW(&wc);
-    }({sizeof(WNDCLASSEXW)});
-    ~Window() noexcept { ::DestroyWindow(hwnd); }
-    Window() { ::SetWindowLongPtrW(hwnd, -21, this); }
+//   /// main-window class
+//   class Window {
+//     friend ::yw::main;
+//     static constexpr int initsz                = 400;
+//     static constexpr int exstyle               = WS_EX_ACCEPTFILES;
+//     static constexpr int style                 = WS_CAPTION | WS_SYSMENU;
+//     static constexpr const wchar_t* class_name = L"ywlib-main-window";
+//     static size_t __stdcall class_proc(HANDLE hw, int msg, size_t wp, size_t lp) {
+//     auto w = (Window*)::GetWindowLongPtrW(hw, -21);
+//     if (w && w->userproc && w->userproc(*w, msg, wp, lp)) return 0;
+//     else if (msg == WM_DROPFILES) {
+//       auto drop = (HANDLE)wp;
+//       POINT pt;
+//       ::DragQueryPoint(drop, &pt);
+//       auto n = ::DragQueryFileW(drop, 0xffffffff, nullptr, 0);
+//       dropped.reserve(n), dropped.resize(n);
+//       wchar_t s[FILENAME_MAX];
+//       for (int i{}; i < n; ++i) dropped[i] = std::filesystem::path(std::wstring_view(s, ::DragQueryFileW(drop, i, s, FILENAME_MAX)));
+//       ::DragFinish(drop);
+//     } else if (msg == WM_DESTROY) ::PostQuitMessage(0);
+//     return ::DefWindowProcW(hw, msg, wp, lp);
+//   }
+//     inline static ATOM wc                      = [](WNDCLASSEXW wc) {
+//       wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+//       wc.lpfnWndProc   = ::DefWindowProcW;
+//       wc.hInstance     = hinstance;
+//       wc.hCursor       = ::LoadCursorW(nullptr, IDC_ARROW);
+//       wc.hbrBackground = (HANDLE)(COLOR_WINDOW + 1);
+//       wc.lpszClassName = class_name;
+//       return ::RegisterClassExW(&wc);
+//     }({sizeof(WNDCLASSEXW)});
+//     ~Window() noexcept { ::DestroyWindow(hwnd); }
+//     Window() { ::SetWindowLongPtrW(hwnd, -21, this); }
 
-  public:
-    /// window handle
-    inline static const HANDLE hwnd = ::CreateWindowExW(exstyle, class_name, 0, style, 0, 0, 400, 400, 0, 0, hinstance, 0);
+//   public:
+//     /// window handle
+//     inline static const HANDLE hwnd = ::CreateWindowExW(exstyle, class_name, 0, style, 0, 0, 400, 400, 0, 0, hinstance, 0);
 
-    /// user procedure
-    inline static bool (*userproc)(Window& w, int msg, size_t wp, size_t lp) = nullptr;
+//     /// user procedure
+//     inline static bool (*userproc)(Window& w, int msg, size_t wp, size_t lp) = nullptr;
 
-    /// dropped files
-    inline static std::vector<std::filesystem::path> dropped;
+//     /// dropped files
+//     inline static std::vector<std::filesystem::path> dropped;
 
-  private:
-    inline static RECT pad = [](RECT r) {
-      ::GetClientRect(hwnd, &r);
-      r.left = (400 - r.right) / 2, r.right = 2 * r.left;
-      r.top = 400 - r.bottom - r.left, r.bottom = r.left + r.top;
-      return r;
-    }({});
+//   private:
+//     inline static RECT pad = [](RECT r) {
+//       ::GetClientRect(hwnd, &r);
+//       r.left = (400 - r.right) / 2, r.right = 2 * r.left;
+//       r.top = 400 - r.bottom - r.left, r.bottom = r.left + r.top;
+//       return r;
+//     }({});
 
-  public:
-    /// class for `window::size`
-    struct Size {
-      /// getting the size of the main window
-      std::pair<int, int> operator()() const {
-        RECT r;
-        ::GetClientRect(hwnd, &r);
-        return {r.right, r.bottom};
-      }
-      /// setting the size of the main window
-      void operator()(int Width, int Height) const {
-        ::SetWindowPos(hwnd, 0, 0, 0, Width + pad.right, Height + pad.bottom, SWP_NOMOVE | SWP_NOZORDER);
-      }
-    };
-    /// getting and setting the size of the main window
-    inline static const Size size{};
+//   public:
+//     /// class for `window::size`
+//     struct Size {
+//       /// getting the size of the main window
+//       std::pair<int, int> operator()() const {
+//         RECT r;
+//         ::GetClientRect(hwnd, &r);
+//         return {r.right, r.bottom};
+//       }
+//       /// setting the size of the main window
+//       void operator()(int Width, int Height) const {
+//         ::SetWindowPos(hwnd, 0, 0, 0, Width + pad.right, Height + pad.bottom, SWP_NOMOVE | SWP_NOZORDER);
+//       }
+//     };
+//     /// getting and setting the size of the main window
+//     inline static const Size size{};
 
-    /// shows, activates and brings the main window to the foreground
-    void show() const {
-      ::ShowWindow(hwnd, SW_SHOWNORMAL);
-      ::SetForegroundWindow(hwnd);
-      ::SetActiveWindow(hwnd);
-    }
-    /// hides the main window
-    void hide() const { ::ShowWindow(hwnd, SW_HIDE); }
-  };
+//     /// shows, activates and brings the main window to the foreground
+//     void show() const {
+//       ::ShowWindow(hwnd, SW_SHOWNORMAL);
+//       ::SetForegroundWindow(hwnd);
+//       ::SetActiveWindow(hwnd);
+//     }
+//     /// hides the main window
+//     void hide() const { ::ShowWindow(hwnd, SW_HIDE); }
+//   };
 
-  /// main-window
-  inline static const Window window{};
+//   /// main-window
+//   inline static const Window window{};
 
-  /// main function
-  main(int Width, int Height);
+//   /// main function
+//   main(int Width, int Height);
 
-  /// return code
-  inline static const int return_code{};
+//   /// return code
+//   inline static const int return_code{};
 
-  /// exit main
-  static void exit(int ReturnCode) {
-    const_cast<int&>(return_code) = ReturnCode;
-    throw std::exception("");
-  }
-};
-}
+//   /// exit main
+//   static void exit(int ReturnCode) {
+//     const_cast<int&>(return_code) = ReturnCode;
+//     throw std::exception("");
+//   }
+// };
+// }

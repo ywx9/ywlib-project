@@ -497,7 +497,9 @@ struct LOGFONTW {
   wchar_t lfFaceName[32];
 };
 
+HRESULT __stdcall CoInitializeEx(void*, int);
 wchar_t** __stdcall CommandLineToArgvW(const wchar_t*, int*);
+void __stdcall CoUninitialize();
 HANDLE __stdcall CreateWindowExW(int dwExStyle, const wchar_t* lpClassName, const wchar_t* lpWindowName, int dwStyle, int x, int y, int nWidth, int nHeight, HANDLE hWndParent, HANDLE hMenu, HANDLE hInstance, void* lpParam);
 
 size_t __stdcall DefWindowProcW(HANDLE hWnd, int Msg, size_t wParam, size_t lParam);

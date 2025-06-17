@@ -1,6 +1,12 @@
 {
-  "files.exclude": {},
-  "search.exclude": {},
+  "files.exclude": {
+    "ywlib/inc/*": true,
+    "ywlib/lib/*": true,
+    "ywlib/bin/*": true,
+  },
+  "search.exclude": {
+    "ywlib/inc/*": false,
+  },
   "files.associations": {
     "*": "cpp",
     "*.bat": "bat",
