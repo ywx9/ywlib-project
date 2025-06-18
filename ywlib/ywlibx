@@ -5,6 +5,10 @@
 #include <yw-com.hpp>
 #include <yw-value.hpp>
 
+namespace yw::main {
+int main();
+}
+
 // // MARK: NO NEED TO CALL
 
 // namespace yw { // MARK: WINDOW MESSAGES

@@ -24,12 +24,13 @@ if "%SOURCE%"=="" (
 
 echo(#include "../%SOURCE%" > "%HERE%\compile.cpp"
 echo(int wWinMain(HANDLE, HANDLE, wchar_t*, int) { >> "%HERE%\compile.cpp"
+echo(  int return_code = 0; >> "%HERE%\compile.cpp"
 echo(  try { >> "%HERE%\compile.cpp"
-echo(    auto ywlib_main = yw::main(); >> "%HERE%\compile.cpp"
+echo(    return_code = yw::main::main(); >> "%HERE%\compile.cpp"
 echo(  } catch (const std::exception^& e) { >> "%HERE%\compile.cpp"
-echo(    if (yw::main::return_code != 0) std::cout ^<^< e.what() ^<^< std::endl; >> "%HERE%\compile.cpp"
+echo(    if (return_code != 0) std::cout ^<^< e.what() ^<^< std::endl; >> "%HERE%\compile.cpp"
 echo(  } >> "%HERE%\compile.cpp"
-echo(  return yw::main::return_code; >> "%HERE%\compile.cpp"
+echo(  return return_code; >> "%HERE%\compile.cpp"
 echo(} >> "%HERE%\compile.cpp"
 
 echo(import os, sys, subprocess > "%HERE%\compile.py"
@@ -50,7 +51,10 @@ echo(if result.returncode != 0: >> "%HERE%\compile.py"
 echo(  print(result.stdout) >> "%HERE%\compile.py"
 echo(  sys.exit(result.returncode) >> "%HERE%\compile.py"
 echo(if '--run' in sys.argv: >> "%HERE%\compile.py"
-echo(  return_code = subprocess.run([exe_file]).returncode >> "%HERE%\compile.py"
+echo(  sys.argv.remove('--run')  >> "%HERE%\compile.py"
+echo(  sys.argv[0] = exe_file  >> "%HERE%\compile.py"
+echo(  sys.argv[1] = "--ywlib"  >> "%HERE%\compile.py"
+echo(  return_code = subprocess.run(sys.argv).returncode >> "%HERE%\compile.py"
 echo(  print(f'{exe_file} returns -^> {return_code}') >> "%HERE%\compile.py"
 call python "%HERE%\compile.py" %*
 set RET=%errorlevel%

@@ -22,7 +22,7 @@ public:
   static auto end() { return _argv.end(); }
   template<size_t I> static const str& get() { return _argv[I]; }
   /// search a option (such as --input) and returns the next argument if found
-  static str option(stringable auto&& name, const str& default_value = {}) {
+  static str option(stringable auto&& name, const str& default_value) {
     auto it = std::ranges::find(_argv, unicode<char>(name));
     return (it != _argv.end() && ++it != _argv.end()) ? *it : default_value;
   }

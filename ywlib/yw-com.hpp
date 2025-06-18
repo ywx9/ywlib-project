@@ -1,27 +1,18 @@
 #pragma once
 #include <ywlib>
 
-namespace yw::main {
-
-/// class for `yw::main::cominit`
-class ComInit {
-  bool _bool{};
-public:
-  explicit operator bool() const { return _bool; }
-  ~ComInit() noexcept { _bool ? ::CoUninitialize(), _bool = false : false; }
-  ComInit() noexcept : _bool(0 == ::CoInitializeEx(nullptr, 2)) {}
-};
-
-/// object for initializing and uninitializing COM
-inline const ComInit cominit{};
+namespace yw {
 
 /// smart pointer for COM objects
 template<typename Com> class comptr {
+  operator Com*() &&               = delete;
+  operator Com*() const&&          = delete;
   comptr(const comptr&)            = delete;
   comptr& operator=(const comptr&) = delete;
-  Com* p                           = nullptr;
+  Com* p{nullptr};
 public:
-  operator Com*() const { return p; }
+  operator Com*() & { return p; }
+  operator Com*() const& { return p; }
   explicit operator bool() const { return p != nullptr; }
   Com* operator->() const { return p; }
   bool operator==(Com* other) { return p == other; }
@@ -38,9 +29,25 @@ public:
   Com* const& get() const { return p; }
   void release() { p ? p->Release(), p = nullptr : nullptr; }
 };
+}
+
+namespace yw::main {
+
+/// class for `yw::main::cominit`
+class ComInit {
+  bool _bool{};
+public:
+  explicit operator bool() const { return _bool; }
+  ~ComInit() noexcept { _bool ? ::CoUninitialize(), _bool = false : false; }
+  ComInit() noexcept : _bool(0 == ::CoInitializeEx(nullptr, 2)) {}
+};
+
+/// object for initializing and uninitializing COM
+inline const ComInit cominit{};
 
 /// smart pointer for D3D11 device
 inline comptr<ID3D11Device> d3d_device{};
+
 /// smart pointer for D3D11 device context
 inline comptr<ID3D11DeviceContext> d3d_context = [](comptr<ID3D11DeviceContext> p) -> comptr<ID3D11DeviceContext> {
   const D3D_FEATURE_LEVEL levels[]{D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1};
