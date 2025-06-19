@@ -27,9 +27,9 @@
 #include <inc/d2d1_1.h>
 #include <inc/d3d11.h>
 #include <inc/dwrite_1.h>
-#include <inc/dxgi1_2.h>
-#include <inc/windows.h>
+#include <inc/dxgi1_3.h>
 #include <inc/wincodec.h>
+#include <inc/windows.h>
 
 #ifdef __ywlib_import
 import ywlib;
@@ -1265,6 +1265,64 @@ template<> struct tuple_size<yw::color> : integral_constant<size_t, 4> {};
 template<> struct tuple_size<yw::hcla> : integral_constant<size_t, 4> {};
 template<size_t I> struct tuple_element<I, yw::color> : type_identity<float> {};
 template<size_t I> struct tuple_element<I, yw::hcla> : type_identity<float> {};
+
+template<typename C, typename T> struct formatter<yw::vector2<T>, C> {
+  std::formatter<T, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::vector2<T>& vec, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '(', out = fmt.format(vec.x, ctx);
+    *out++ = ',', out = fmt.format(vec.y, ctx), *out++ = ')';
+    return out;
+  }
+};
+template<typename C, typename T> struct formatter<yw::vector3<T>, C> {
+  std::formatter<T, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::vector3<T>& vec, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '(', out = fmt.format(vec.x, ctx);
+    *out++ = ',', out = fmt.format(vec.y, ctx);
+    *out++ = ',', out = fmt.format(vec.z, ctx), *out++ = ')';
+    return out;
+  }
+};
+template<typename C, typename T> struct formatter<yw::vector4<T>, C> {
+  std::formatter<T, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::vector4<T>& vec, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '(', out = fmt.format(vec.x, ctx);
+    *out++ = ',', out = fmt.format(vec.y, ctx);
+    *out++ = ',', out = fmt.format(vec.z, ctx);
+    *out++ = ',', out = fmt.format(vec.w, ctx), *out++ = ')';
+    return out;
+  }
+};
+template<typename C> struct formatter<yw::color, C> {
+  std::formatter<float, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::color& col, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '(', out = fmt.format(col.r, ctx);
+    *out++ = ',', out = fmt.format(col.g, ctx);
+    *out++ = ',', out = fmt.format(col.b, ctx);
+    *out++ = ',', out = fmt.format(col.a, ctx), *out++ = ')';
+    return out;
+  }
+};
+template<typename C> struct formatter<yw::hcla, C> {
+  std::formatter<float, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::hcla& col, auto& ctx) const {
+    auto out = ctx.out();
+    *out++ = '(', out = fmt.format(col.h, ctx);
+    *out++ = ',', out = fmt.format(col.c, ctx);
+    *out++ = ',', out = fmt.format(col.l, ctx);
+    *out++ = ',', out = fmt.format(col.a, ctx), *out++ = ')';
+    return out;
+  }
+};
 }
 
 export namespace yw { // MARK: XVECTOR
@@ -2185,76 +2243,126 @@ template<typename C> struct formatter<yw::path, C> {
 };
 }
 
-// export namespace yw { // MARK: LOGGER
+export namespace yw { // MARK: STOPWATCH
 
-// /// class to represent log level
-// struct log_level {
-//   str name;
-//   uint value;
-//   friend constexpr bool operator==(const log_level& l, const log_level& r) noexcept { return l.value == r.value; }
-//   friend constexpr std::strong_ordering operator<=>(const log_level& l, const log_level& r) noexcept { return l.value <=> r.value; }
-//   static const log_level all, debug, info, warn, error, fatal;
-// };
+class stopwatch {
+  inline static double freq_r = [](long long _) { return ::QueryPerformanceFrequency(&_), 1 / double(_); }({});
+  long long last;
+public:
+  /// default constructor; starts timer
+  stopwatch() noexcept { ::QueryPerformanceCounter(&last); }
+  /// returns elapsed time in seconds
+  double operator()() const noexcept {
+    long long i;
+    ::QueryPerformanceCounter(&i);
+    return (i - last) * freq_r;
+  }
+  /// conversion to double; returns elapsed time in seconds
+  operator double() const noexcept { return operator()(); }
+  /// conversion to float; returns elapsed time in seconds
+  explicit operator float() const noexcept { return float(operator()()); }
+  /// resets the stopwatch
+  void reset() noexcept { ::QueryPerformanceCounter(&last); }
+  /// returns elapsed time in seconds and resets the stopwatch
+  double split() noexcept {
+    return [&](long long i) noexcept { return ::QueryPerformanceCounter(&last), (last - i) * freq_r; }(last);
+  }
+};
+}
 
-// inline const log_level log_level::all{"all", 0};
-// inline const log_level log_level::debug{"debug", 10};
-// inline const log_level log_level::info{"info", 20};
-// inline const log_level log_level::warn{"warn", 30};
-// inline const log_level log_level::error{"error", 40};
-// inline const log_level log_level::fatal{"fatal", 50};
+export namespace yw { // MARK: OPEN/SAVE FILE, OK/YES
 
-// /// class to represent logger
-// class logger {
-//   str text{};
-// public:
-//   /// file path where to write log
-//   yw::path path{};
-//   /// current log level
-//   log_level level{log_level::info};
-//   /// flag to write to console
-//   bool console{true};
-//   /// destructor; writes log to file if `path` is set
-//   ~logger() noexcept {
-//     if (text.empty() || path.empty()) return;
-//     try {
-//       std::ofstream ofs(path, std::ios::binary | std::ios::app);
-//       if (!ofs.is_open()) throw std::ios_base::failure("Failed to open log file");
-//       ofs.write(text.data(), text.size());
-//       ofs.close();
-//     } catch (const std::exception& e) { std::cerr << "Error writing log to file: " << e.what() << '\n'; } catch (...) {
-//       std::cerr << "Unknown error writing log to file\n";
-//     }
-//   }
-//   /// default constructor
-//   logger() noexcept = default;
-//   /// constructor; sets log level and path
-//   logger(const yw::path& Path, log_level Level = log_level::info, bool Console = true) noexcept : path(Path), level(Level), console(Console) {}
-//   /// operator to log messages
-//   void operator()(const log_level& Level, stringable auto&& Text) {
-//     if (Level < level) return;
-//     const auto s0 = unicode<char>(string_view<iter_value_t<decltype(Text)>>(Text));
-//     const auto s1 = format("{} [{}] {}\n", time(), Level.name, s0);
-//     if (console) std::cout << s1;
-//     text += s1;
-//   }
-//   /// logs debug message
-//   void debug(stringable auto&& Text) { operator()(log_level::debug, Text); }
-//   /// logs info message
-//   void info(stringable auto&& Text) { operator()(log_level::info, Text); }
-//   /// logs warning message
-//   void warn(stringable auto&& Text) { operator()(log_level::warn, Text); }
-//   /// logs error message
-//   void error(stringable auto&& Text) { operator()(log_level::error, Text); }
-//   /// logs fatal error message
-//   void fatal(stringable auto&& Text, const source& _ = {}) noexcept {
-//     if (log_level::fatal < level) return;
-//     const auto s0 = unicode<char>(string_view<iter_value_t<decltype(Text)>>(Text));
-//     const auto s1 = format("{} [fatal] {}: {}\n", time(), _, s0);
-//     if (console) std::cout << s1;
-//     text += s1;
-//   }
-// };
+namespace _ {
+path _openfile(HANDLE Owner, const wchar_t* Title, const wchar_t* InitDir, bool Save) {
+  OPENFILENAMEW ofn{};
+  wchar_t szFile[260]{};
+  ofn.lStructSize     = sizeof(ofn);
+  ofn.hwndOwner       = Owner;
+  ofn.lpstrFilter     = L"All Files\0*.*\0";
+  ofn.lpstrFile       = szFile;
+  ofn.nMaxFile        = int(arraysize(szFile));
+  ofn.lpstrInitialDir = InitDir;
+  ofn.lpstrTitle      = Title;
+  ofn.Flags           = 0x800 | 0x1000 | 0x20000;
+  if (Save) return ::GetSaveFileNameW(&ofn) ? path(szFile) : path();
+  else return ::GetOpenFileNameW(&ofn) ? path(szFile) : path();
+}
+}
 
-// }
+/// displays a file open dialog and returns the selected file path
+path openfile() { return _::_openfile(nullptr, nullptr, nullptr, false); }
 
+/// displays a file open dialog and returns the selected file path
+template<stringable S> path openfile(S&& Title, const path& p = path{}) {
+  auto title = unicode<wchar_t>(static_cast<S&&>(Title));
+  return _::_openfile(nullptr, title.data(), p.c_str(), false);
+}
+
+/// displays a file save dialog and returns the selected file path
+path savefile() { return _::_openfile(nullptr, nullptr, nullptr, true); }
+
+/// displays a file save dialog and returns the selected file path
+template<stringable S> path savefile(S&& Title, const path& p = path{}) {
+  auto title = unicode<wchar_t>(static_cast<S&&>(Title));
+  return _::_openfile(nullptr, title.data(), p.c_str(), true);
+}
+
+/// displays a message box with OK button and returns true if OK is pressed
+template<stringable S1, stringable S2> bool ok(S1&& Text, S2&& Caption) noexcept {
+  auto text = unicode<wchar_t>(static_cast<S1&&>(Text)), caption = unicode<wchar_t>(static_cast<S2&&>(Caption));
+  return ::MessageBoxW(nullptr, text.data(), caption.data(), 0x30) == 1;
+}
+
+/// displays a message box with OK button and returns true if OK is pressed
+template<stringable S> bool ok(S&& Text) noexcept {
+  auto text = unicode<wchar_t>(static_cast<S&&>(Text));
+  return ::MessageBoxW(nullptr, text.data(), L"OK?", 0x30) == 1;
+}
+
+/// displays a message box with Yes and No buttons and returns true if Yes is pressed
+template<stringable S1, stringable S2> bool yes(S1&& Text, S2&& Caption) noexcept {
+  auto text = unicode<wchar_t>(static_cast<S1&&>(Text)), caption = unicode<wchar_t>(static_cast<S2&&>(Caption));
+  return ::MessageBoxW(nullptr, text.data(), caption.data(), 0x24) == 6;
+}
+
+/// displays a message box with Yes and No buttons and returns true if Yes is pressed
+template<stringable S> bool yes(S&& Text) noexcept {
+  auto text = unicode<wchar_t>(static_cast<S&&>(Text));
+  return ::MessageBoxW(nullptr, text.data(), L"Yes?", 0x24) == 6;
+}
+
+/// converts string to integer
+inline constexpr auto stoi =[]<stringable S>(S&& s) -> int64_t {
+  int64_t result;
+  const auto str = unicode<char>(static_cast<S&&>(s));
+  std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
+};
+
+/// converts string to floating point
+inline constexpr auto stof = []<stringable S>(S&& s) -> double {
+  double result;
+  const auto str = unicode<char>(static_cast<S&&>(s));
+  std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
+};
+
+/// converts integer to string
+template<char_type C> inline constexpr auto itos = [](integral auto i) -> string<C> {
+  str temp(21, {});
+  auto tcr = std::to_chars(temp.data(), temp.data() + temp.size(), i);
+  temp.resize(tcr.ptr - temp.data());
+  if constexpr (same_as<C, char>) return temp;
+  else return unicode<C>(mv(temp));
+};
+
+/// converts floating point to string
+template<char_type C> inline constexpr auto ftos = [](floating auto f) -> string<C> {
+  str temp(32, {});
+  auto tcr = std::to_chars(temp.data(), temp.data() + temp.size(), f);
+  temp.resize(tcr.ptr - temp.data());
+  if constexpr (same_as<C, char>) return temp;
+  else return unicode<C>(mv(temp));
+};
+}
 #endif

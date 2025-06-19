@@ -497,6 +497,33 @@ struct LOGFONTW {
   wchar_t lfFaceName[32];
 };
 
+struct OPENFILENAMEW {
+  int lStructSize;
+  HANDLE hwndOwner;
+  HANDLE hInstance;
+  const wchar_t* lpstrFilter;
+  wchar_t* lpstrCustomFilter;
+  int nMaxCustFilter;
+  int nFilterIndex;
+  wchar_t* lpstrFile;
+  int nMaxFile;
+  wchar_t* lpstrFileTitle;
+  int nMaxFileTitle;
+  const wchar_t* lpstrInitialDir;
+  const wchar_t* lpstrTitle;
+  int Flags;
+  short nFileOffset;
+  short nFileExtension;
+  const wchar_t* lpstrDefExt;
+  size_t lCustData;
+  void* lpfnHook;
+  const wchar_t* lpTemplateName;
+  void* pvReserved;
+  int dwReserved;
+  int FlagsEx;
+};
+static_assert(sizeof(OPENFILENAMEW) == 152);
+
 HRESULT __stdcall CoInitializeEx(void*, int);
 wchar_t** __stdcall CommandLineToArgvW(const wchar_t*, int*);
 void __stdcall CoUninitialize();
@@ -509,12 +536,15 @@ BOOL __stdcall DragFinish(HANDLE hDrop);
 BOOL __stdcall DragQueryFileW(HANDLE hDrop, int iFile, wchar_t* lpFile, int cch);
 BOOL __stdcall DragQueryPoint(HANDLE hDrop, POINT* lppt);
 
-int __stdcall GetClientRect(HANDLE hWnd, RECT* lpRect);
+BOOL __stdcall GetClientRect(HANDLE hWnd, RECT* lpRect);
 const wchar_t* __stdcall GetCommandLineW();
 BOOL __stdcall GetCursorPos(POINT* lpPoint);
 HANDLE __stdcall GetDesktopWindow();
 BOOL __stdcall GetMessageW(MSG* lpMsg, HANDLE hWnd, int wMsgFilterMin, int wMsgFilterMax);
 HANDLE __stdcall GetModuleHandleW(const wchar_t* lpModuleName);
+BOOL __stdcall GetOpenFileNameW(OPENFILENAMEW*);
+BOOL __stdcall GetSaveFileNameW(OPENFILENAMEW*);
+const char* __stdcall GetUserNameW(wchar_t*, int*);
 void* __stdcall GetWindowLongPtrW(HANDLE hWnd, int nIndex);
 BOOL __stdcall GetWindowRect(HANDLE hWnd, RECT* lpRect);
 BOOL __stdcall GetWindowTextW(HANDLE hWnd, wchar_t* lpString, int nMaxCount);
@@ -522,10 +552,15 @@ BOOL __stdcall GetWindowTextLengthW(HANDLE hWnd);
 
 HANDLE __stdcall LoadCursorW(HANDLE hInstance, const wchar_t* lpCursorName);
 HANDLE __stdcall LoadIconW(HANDLE hInstance, const wchar_t* lpIconName);
+void* __stdcall LocalFree(void*);
 
 int __stdcall MessageBoxW(HANDLE, const wchar_t*, const wchar_t*, int);
 
+BOOL __stdcall PeekMessageW(MSG* lpMsg, HANDLE hWnd, int wMsgFilterMin, int wMsgFilterMax, int wRemoveMsg);
 void __stdcall PostQuitMessage(int);
+
+BOOL __stdcall QueryPerformanceCounter(void*);
+BOOL __stdcall QueryPerformanceFrequency(void*);
 
 ATOM __stdcall RegisterClassExW(const WNDCLASSEXW* lpWndClass);
 
@@ -533,6 +568,7 @@ HANDLE __stdcall SetActiveWindow(HANDLE hWnd);
 HANDLE __stdcall SetForegroundWindow(HANDLE hWnd);
 void* __stdcall SetWindowLongPtrW(HANDLE hWnd, int nIndex, void* dwNewLong);
 BOOL __stdcall SetWindowPos(HANDLE hwnd, HANDLE hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
+BOOL __stdcall SetWindowTextW(HANDLE hwnd, const wchar_t* lpString);
 BOOL __stdcall ShowWindow(HANDLE hwnd, int nCmdShow);
 
 BOOL __stdcall TranslateMessage(const MSG* lpMsg);

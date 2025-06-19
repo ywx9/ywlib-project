@@ -2,11 +2,13 @@
 using namespace yw;
 
 int main::main() {
-  if (main::argv.option("--ywlib")) {
-    ::MessageBoxW(0, L"--ywlib is in command line", L"Info", 0);
-  } else {
-    ::MessageBoxW(0, L"--ywlib is NOT in command line", L"Info", 0);
+  title(format("{}", main::size));
+  main::show();
+  {
+    auto d = main::sys::rendertarget.draw(color::yellow);
+    d.line({100, 100}, {200, 200});
   }
+  while (main::update()) {}
   return 0;
 }
 

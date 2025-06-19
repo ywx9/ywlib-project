@@ -150,7 +150,7 @@ typedef struct DXGI_SWAP_CHAIN_DESC1 {
   DXGI_SCALING Scaling;
   DXGI_SWAP_EFFECT SwapEffect;
   DXGI_ALPHA_MODE AlphaMode;
-  uint32_t Flags;
+  DXGI_SWAP_CHAIN_FLAG Flags;
 } DXGI_SWAP_CHAIN_DESC1;
 
 typedef struct DXGI_SWAP_CHAIN_FULLSCREEN_DESC {
