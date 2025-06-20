@@ -2,8 +2,11 @@
 #include <ywlib>
 
 #include <yw-args.hpp>
+#include <yw-bitmap.hpp>
+#include <yw-buffer.hpp>
 #include <yw-com.hpp>
-#include <yw-value.hpp>
+#include <yw-shader.hpp>
+#include <yw-window.hpp>
 
 namespace yw::main {
 int main();

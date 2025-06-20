@@ -23,12 +23,13 @@ if "%SOURCE%"=="" (
 )
 
 echo(#include "../%SOURCE%" > "%HERE%\compile.cpp"
-echo(int wWinMain(HANDLE, HANDLE, wchar_t*, int) { >> "%HERE%\compile.cpp"
+@REM echo(int wWinMain(HANDLE, HANDLE, wchar_t*, int) { >> "%HERE%\compile.cpp"
+echo(int wmain(int, wchar_t**) { >> "%HERE%\compile.cpp"
 echo(  int return_code = 0; >> "%HERE%\compile.cpp"
 echo(  try { >> "%HERE%\compile.cpp"
 echo(    return_code = yw::main::main(); >> "%HERE%\compile.cpp"
 echo(  } catch (const std::exception^& e) { >> "%HERE%\compile.cpp"
-echo(    if (return_code != 0) std::cout ^<^< e.what() ^<^< std::endl; >> "%HERE%\compile.cpp"
+echo(    std::cout ^<^< e.what() ^<^< std::endl; >> "%HERE%\compile.cpp"
 echo(  } >> "%HERE%\compile.cpp"
 echo(  return return_code; >> "%HERE%\compile.cpp"
 echo(} >> "%HERE%\compile.cpp"

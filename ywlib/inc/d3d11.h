@@ -772,7 +772,7 @@ cominterface("c0bfa96c-e089-44fb-8eaf-26f8796190da") ID3D11DeviceContext : ID3D1
   virtual void __stdcall DrawAuto() = 0;
   virtual void __stdcall DrawIndexedInstancedIndirect(ID3D11Buffer*, int) = 0;
   virtual void __stdcall DrawInstancedIndirect(ID3D11Buffer*, int) = 0;
-  virtual void __stdcall Dispatch(int, int, int) = 0;
+  virtual void __stdcall Dispatch(uint32_t, uint32_t, uint32_t) = 0;
   virtual void __stdcall DispatchIndirect(ID3D11Buffer*, int) = 0;
   virtual void __stdcall RSSetState(ID3D11RasterizerState*) = 0;
   virtual void __stdcall RSSetViewports(int, const void*) = 0;

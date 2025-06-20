@@ -385,6 +385,10 @@ template<typename R> inline constexpr auto invoke_r =
 
 template<typename Fn> requires requires(const Fn& f) { f.operator()(); } struct caster : public Fn {
   constexpr operator std::invoke_result_t<Fn>() const noexcept(std::is_nothrow_invocable_v<Fn>) { return Fn::operator()(); }
+  template<typename T> explicit(convertible_to<Fn&, T>) constexpr operator T() & noexcept(nt_convertible_to<Fn&, T>) requires convertible_to<Fn&, T> { return static_cast<T>(static_cast<Fn&>(*this)); }
+  template<typename T> explicit(convertible_to<const Fn&, T>) constexpr operator T() const& noexcept(nt_convertible_to<const Fn&, T>) requires convertible_to<const Fn&, T> { return static_cast<T>(static_cast<const Fn&>(*this)); }
+  template<typename T> explicit(convertible_to<Fn&&, T>) constexpr operator T() && noexcept(nt_convertible_to<Fn&&, T>) requires convertible_to<Fn&&, T> { return static_cast<T>(static_cast<Fn&&>(*this)); }
+  template<typename T> explicit(convertible_to<const Fn&&, T>) constexpr operator T() const&& noexcept(nt_convertible_to<const Fn&&, T>) requires convertible_to<const Fn&&, T> { return static_cast<T>(static_cast<const Fn&&>(*this)); }
   template<typename T> explicit constexpr operator T() const noexcept(std::is_nothrow_convertible_v<Fn, T>)
     requires requires { static_cast<T>(Fn::operator()()); } { return static_cast<T>(Fn::operator()()); }
   template<typename... Ts> constexpr std::invoke_result_t<const Fn&, Ts...> operator()(Ts&&... Args) const
@@ -930,7 +934,7 @@ template<typename T> array(size_t, const T&) -> array<T, npos>;
 template<iterator I, sentinel_for<I> S> array(I, S) -> array<iter_value_t<I>, npos>;
 template<range R> array(R&&) -> array<iter_value_t<R>, npos>;
 
-template<typename T> struct vector2 {
+template<std::regular T> struct vector2 {
   static constexpr size_t count{2};
   using value_type = T;
   T x{}, y{};
@@ -956,11 +960,12 @@ template<typename T> struct vector2 {
   template<size_t I> requires(I < 2) constexpr const T& get() const& noexcept { return select<I>(x, y); }
   template<size_t I> requires(I < 2) constexpr T&& get() && noexcept { return static_cast<T&&>(select<I>(x, y)); }
   template<size_t I> requires(I < 2) constexpr const T&& get() const&& noexcept { return static_cast<const T&&>(select<I>(x, y)); }
+  friend constexpr bool operator==(const vector2& a, const vector2& b) { return a.x == b.x && a.y == b.y; }
   template<typename C, typename Tr> friend auto& operator<<(std::basic_ostream<C, Tr>& os, const vector2& v) //
   { return os << '(' << v.x << "," << v.y << ')'; }
 };
 
-template<typename T> struct vector3 {
+template<std::regular T> struct vector3 {
   using value_type              = T;
   static constexpr size_t count = 3;
   T x{}, y{}, z{};
@@ -987,6 +992,7 @@ template<typename T> struct vector3 {
   template<size_t I> requires(I < 3) constexpr const T& get() const& noexcept { return select<I>(x, y, z); }
   template<size_t I> requires(I < 3) constexpr T&& get() && noexcept { return static_cast<T&&>(select<I>(x, y, z)); }
   template<size_t I> requires(I < 3) constexpr const T&& get() const&& noexcept { return static_cast<const T&&>(select<I>(x, y, z)); }
+  friend constexpr bool operator==(const vector3& a, const vector3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
   template<typename C, typename Tr> friend auto& operator<<(std::basic_ostream<C, Tr>& os, const vector3& v) //
   { return os << '(' << v.x << "," << v.y << "," << v.z << ')'; }
 };
@@ -1021,6 +1027,7 @@ template<typename T> struct vector4 {
   template<size_t I> requires(I < 4) constexpr const T& get() const& noexcept { return select<I>(x, y, z, w); }
   template<size_t I> requires(I < 4) constexpr T&& get() && noexcept { return static_cast<T&&>(select<I>(x, y, z, w)); }
   template<size_t I> requires(I < 4) constexpr const T&& get() const&& noexcept { return static_cast<const T&&>(select<I>(x, y, z, w)); }
+  friend constexpr bool operator==(const vector4& a, const vector4& b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
   template<typename C, typename Tr> friend auto& operator<<(std::basic_ostream<C, Tr>& os, const vector4& v) //
   { return os << '(' << v.x << "," << v.y << "," << v.z << "," << v.w << ')'; }
 };
@@ -2177,7 +2184,8 @@ public:
   using std_path   = std::filesystem::path;
   using std_string = std_path::string_type;
   path() noexcept  = default;
-  template<castable_to<std_path> P> path(P&& p) noexcept : std_path(static_cast<std_path>(static_cast<P&&>(p))) {}
+  template<castable_to<std_path> P> requires(!stringable<P, char>) path(P&& p) noexcept : std_path(static_cast<std_path>(static_cast<P&&>(p))) {}
+  template<stringable<char> S> path(S&& s) noexcept : std_path(unicode<wchar_t>(static_cast<S&&>(s))) {}
   explicit operator bool() const noexcept { return !this->empty(); }
   std::error_code& ec() const noexcept { return _ec; }
   std_string string() const noexcept { return this->native(); }
@@ -2363,6 +2371,29 @@ template<char_type C> inline constexpr auto ftos = [](floating auto f) -> string
   temp.resize(tcr.ptr - temp.data());
   if constexpr (same_as<C, char>) return temp;
   else return unicode<C>(mv(temp));
+};
+}
+
+export namespace yw { // MARK: movable-const-object
+
+/// class to represent a movable constant object
+template<std::regular T> struct movable_const_object {
+  T object;
+public:
+  constexpr operator const T&() const { return object; }
+  constexpr const T& operator()() const { return object; }
+  explicit constexpr movable_const_object() noexcept(nt_constructible<T>) = default;
+  explicit constexpr movable_const_object(movable_const_object&& o) noexcept(nt_constructible<T, T&&>) : object{mv(o.object)} {}
+  constexpr movable_const_object& operator=(movable_const_object&& o) noexcept(nt_constructible<T, T&&>) { return object = mv(o.object), *this; }
+  template<typename... Ts> requires constructible<T, Ts...> explicit constexpr movable_const_object(Ts&&... Args) noexcept(nt_constructible<T, Ts...>) : object{fwd<Ts>(Args)...} {}
+};
+template<typename T> movable_const_object(T&&) -> movable_const_object<remove_cvref<T>>;
+}
+namespace std {
+template<typename T, typename C> struct formatter<yw::movable_const_object<T>, C> {
+  std::formatter<T, C> fmt;
+  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
+  auto format(const yw::movable_const_object<T>& o, auto& ctx) const { return fmt.format(o, ctx); }
 };
 }
 #endif

@@ -380,7 +380,7 @@ cominterface("cafcb56c-6ac3-4889-bf47-9e23bbd260ec") IDXGISurface : IDXGIDeviceS
 
 cominterface("4AE63092-6327-4c1b-80AE-BFE12EA32B86") IDXGISurface1 : IDXGISurface {
   virtual HRESULT __stdcall GetDC(BOOL, HANDLE*) = 0;
-  virtual HRESULT __stdcall ReleaseDC(RECT*)      = 0;
+  virtual HRESULT __stdcall ReleaseDC(RECT*)     = 0;
 };
 
 struct DXGI_RGB {
@@ -432,24 +432,24 @@ cominterface("2411e7e1-12ac-4ccf-bd14-9798e8534dc0") IDXGIAdapter : IDXGIObject 
 };
 
 cominterface("310d36a0-d2e7-4c0a-aa04-6a9d23b8886a") IDXGISwapChain : IDXGIDeviceSubObject {
-  virtual HRESULT __stdcall Present(uint32_t, uint32_t)                                        = 0;
-  virtual HRESULT __stdcall GetBuffer(uint32_t, const GUID&, void**)                           = 0;
-  virtual HRESULT __stdcall SetFullscreenState(BOOL, IDXGIOutput*)                             = 0;
-  virtual HRESULT __stdcall GetFullscreenState(BOOL*, IDXGIOutput**)                           = 0;
-  virtual HRESULT __stdcall GetDesc(DXGI_SWAP_CHAIN_DESC*)                                     = 0;
-  virtual HRESULT __stdcall ResizeBuffers(uint32_t, uint32_t, uint32_t, DXGI_FORMAT, uint32_t) = 0;
-  virtual HRESULT __stdcall ResizeTarget(const DXGI_MODE_DESC*)                                = 0;
-  virtual HRESULT __stdcall GetContainingOutput(IDXGIOutput**)                                 = 0;
-  virtual HRESULT __stdcall GetFrameStatistics(DXGI_FRAME_STATISTICS*)                         = 0;
-  virtual HRESULT __stdcall GetLastPresentCount(uint32_t*)                                     = 0;
+  virtual HRESULT __stdcall Present(uint32_t, uint32_t)                    = 0;
+  virtual HRESULT __stdcall GetBuffer(uint32_t, const GUID&, void**)       = 0;
+  virtual HRESULT __stdcall SetFullscreenState(BOOL, IDXGIOutput*)         = 0;
+  virtual HRESULT __stdcall GetFullscreenState(BOOL*, IDXGIOutput**)       = 0;
+  virtual HRESULT __stdcall GetDesc(DXGI_SWAP_CHAIN_DESC*)                 = 0;
+  virtual HRESULT __stdcall ResizeBuffers(int, int, int, DXGI_FORMAT, int) = 0;
+  virtual HRESULT __stdcall ResizeTarget(const DXGI_MODE_DESC*)            = 0;
+  virtual HRESULT __stdcall GetContainingOutput(IDXGIOutput**)             = 0;
+  virtual HRESULT __stdcall GetFrameStatistics(DXGI_FRAME_STATISTICS*)     = 0;
+  virtual HRESULT __stdcall GetLastPresentCount(uint32_t*)                 = 0;
 };
 
 cominterface("7b7166ec-21c7-44ae-b21a-c9ae321ae369") IDXGIFactory : IDXGIObject {
   virtual HRESULT __stdcall EnumAdapters(uint32_t, IDXGIAdapter**)                              = 0;
-  virtual HRESULT __stdcall MakeWindowAssociation(HANDLE, uint32_t)                            = 0;
-  virtual HRESULT __stdcall GetWindowAssociation(HANDLE*)                                      = 0;
+  virtual HRESULT __stdcall MakeWindowAssociation(HANDLE, uint32_t)                             = 0;
+  virtual HRESULT __stdcall GetWindowAssociation(HANDLE*)                                       = 0;
   virtual HRESULT __stdcall CreateSwapChain(IUnknown*, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**) = 0;
-  virtual HRESULT __stdcall CreateSoftwareAdapter(HANDLE, IDXGIAdapter**)                      = 0;
+  virtual HRESULT __stdcall CreateSoftwareAdapter(HANDLE, IDXGIAdapter**)                       = 0;
 };
 
 HRESULT __stdcall CreateDXGIFactory1(const GUID&, void**);

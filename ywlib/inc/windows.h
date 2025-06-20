@@ -540,6 +540,7 @@ BOOL __stdcall GetClientRect(HANDLE hWnd, RECT* lpRect);
 const wchar_t* __stdcall GetCommandLineW();
 BOOL __stdcall GetCursorPos(POINT* lpPoint);
 HANDLE __stdcall GetDesktopWindow();
+BOOL __stdcall GetKeyboardState(void* lpKeyState);
 BOOL __stdcall GetMessageW(MSG* lpMsg, HANDLE hWnd, int wMsgFilterMin, int wMsgFilterMax);
 HANDLE __stdcall GetModuleHandleW(const wchar_t* lpModuleName);
 BOOL __stdcall GetOpenFileNameW(OPENFILENAMEW*);
