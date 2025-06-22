@@ -4,6 +4,7 @@
 #include <yw-args.hpp>
 #include <yw-bitmap.hpp>
 #include <yw-buffer.hpp>
+#include <yw-camera.hpp>
 #include <yw-com.hpp>
 #include <yw-shader.hpp>
 #include <yw-window.hpp>

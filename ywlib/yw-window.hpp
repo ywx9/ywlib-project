@@ -96,16 +96,22 @@ inline MSG message{};
 inline comptr<::IDXGISwapChain1> swapchain = [](comptr<::IDXGISwapChain1> p) -> comptr<::IDXGISwapChain1> {
   RECT r;
   ::GetClientRect(sys::hwnd, &r); // clang-format off
-  DXGI_SWAP_CHAIN_DESC1 desc{uint32_t(r.right), uint32_t(r.bottom), DXGI_FORMAT_R8G8B8A8_UNORM, false, {1, 0}, {}, 2}; // clang-format on
+  DXGI_SWAP_CHAIN_DESC1 desc{uint32_t(r.right), uint32_t(r.bottom), default_format, false, {1, 0}, {}, 2}; // clang-format on
   desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
   desc.SwapEffect  = DXGI_SWAP_EFFECT_DISCARD;
   auto hr          = dxgi_factory->CreateSwapChainForHwnd(d3d_device.get(), hwnd, &desc, nullptr, nullptr, &p.get());
   if (hr != 0) yw::ok(L"Failed to create swapchain", L"Fatal Error");
+  else if (debug) print("Created swapchain for main-window: {}x{}", desc.Width, desc.Height);
   return p;
 }({});
 
 /// render-target for the main-window
-inline bitmap rendertarget = bitmap(swapchain.get());
+inline bitmap rendertarget = [] {
+  try {
+    return bitmap(swapchain.get());
+  } catch (const std::exception& e) { yw::ok(L"Failed to create render-target", L"Fatal Error"); }
+  return bitmap{};
+}();
 }
 
 /// shows, activates and brings the main-window to the foreground
@@ -154,9 +160,10 @@ struct Size {
   /// sets the size of the main-window
   void operator()(const vector2<int>& size, const source& _ = {}) const {
     main::sys::rendertarget = {};
-    auto hr = main::sys::swapchain->ResizeBuffers(2, size.x, size.y, {}, 0);
+    auto hr                 = main::sys::swapchain->ResizeBuffers(2, size.x, size.y, {}, 0);
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
     main::sys::rendertarget = bitmap(main::sys::swapchain.get());
+    ::SetWindowPos(sys::hwnd, nullptr, 0, 0, size.x + main::sys::padding.z, size.y + main::sys::padding.w, SWP_NOMOVE | SWP_NOZORDER);
   }
 };
 /// gets/sets the size of the main-window
@@ -169,10 +176,10 @@ inline constexpr caster height{[]() -> int { return size().y; }};
 /// functor for `yw::main::key`
 class Key {
   inline static bool now{};
-  inline static char state[2][256]{};
+  inline static array<array<char, 256>, 2> state{};
 public:
   /// updates key state
-  static void update() { ::GetKeyboardState(state[now = !now]); }
+  static void update() { ::GetKeyboardState(state[now = !now].data()); }
   /// virtual key code
   const int code;
   /// constructor
@@ -180,9 +187,9 @@ public:
   /// checks if the key is down
   bool down() const noexcept { return state[now][code] & 0x80; }
   /// checks if the key is just pressed
-  bool pressed() const noexcept { return state[now][code] && !state[!now][code]; }
+  bool pressed() const noexcept { return (state[now][code] & 0x80) && !(state[!now][code] & 0x80); }
   /// checks if the key is just released
-  bool released() const noexcept { return !state[now][code] && state[!now][code]; }
+  bool released() const noexcept { return !(state[now][code] & 0x80) && (state[!now][code] & 0x80); }
   /// checks if the key is down
   operator bool() const noexcept { return down(); }
 };
@@ -203,7 +210,6 @@ inline const Key f1(0x70), f2(0x71), f3(0x72), f4(0x73), f5(0x74), f6(0x75);
 inline const Key f7(0x76), f8(0x77), f9(0x78), f10(0x79), f11(0x7A), f12(0x7B);
 inline const Key numlock(0x90), scrolllock(0x91);
 inline const Key lshift(0xA0), rshift(0xA1), lcontrol(0xA2), rcontrol(0xA3), lmenu(0xA4), rmenu(0xA5);
-
 }
 
 /// functor for `yw::main::update`
@@ -233,8 +239,4 @@ inline bitmap::drawing draw() { return main::sys::rendertarget.draw(); }
 /// begins drawing on the main-window with a clear color
 inline bitmap::drawing draw(const yw::color& Clear) { return main::sys::rendertarget.draw(Clear); }
 }
-
-
-
-
 }

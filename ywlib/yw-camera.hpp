@@ -1,5 +1,6 @@
 #pragma once
 #include <yw-buffer.hpp>
+#include <yw-bitmap.hpp>
 
 namespace yw {
 
@@ -23,11 +24,11 @@ public:
     auto& [v, vp] = *(tuple<xmatrix, xmatrix>*)mapped.pData;
     xvview(position, rotation, offset, v);
     if (orthographic) {
-      auto a = xvset(2.0f * factor / bitmap::width, 2.0f * factor / bitmap::height, 1.0f / (f - n), n / (f - n));
+      auto a = xvset(2.0f * factor / bitmap::size.x, 2.0f * factor / bitmap::size.y, 1.0f / (f - n), n / (f - n));
       vp[0] = v[0] * xvpermute<0, 0, 0, 0>(a), vp[1] = v[1] * xvpermute<1, 1, 1, 1>(a);
       vp[2] = v[2] * xvpermute<2, 2, 2, 2>(a) - xvsetzero<1, 1, 1, 0>(a), vp[3] = v[3];
     } else {
-      auto a = xvset((-factor * height) / width, factor, f / (f - n), -f * n / (f - n));
+      auto a = xvset((-factor * bitmap::size.y) / bitmap::size.x, factor, f / (f - n), -f * n / (f - n));
       vp[0] = v[0] * xvpermute<0, 0, 0, 0>(a), vp[1] = v[1] * xvpermute<1, 1, 1, 1>(a);
       vp[2] = v[2] * xvpermute<2, 2, 2, 2>(a) + xvsetzero<1, 1, 1, 0>(a), vp[3] = v[2];
     }

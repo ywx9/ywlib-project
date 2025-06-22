@@ -123,6 +123,10 @@ enum class D3D11_CPU_ACCESS_FLAG {
   D3D11_CPU_ACCESS_READ = 0x20000,
 };
 using enum D3D11_CPU_ACCESS_FLAG;
+extern "C++" constexpr auto operator~(D3D11_CPU_ACCESS_FLAG a) noexcept { return D3D11_CPU_ACCESS_FLAG(~static_cast<int>(a)); }
+extern "C++" constexpr auto operator|(D3D11_CPU_ACCESS_FLAG a, D3D11_CPU_ACCESS_FLAG b) noexcept { return D3D11_CPU_ACCESS_FLAG(static_cast<int>(a) | static_cast<int>(b)); }
+extern "C++" constexpr auto operator&(D3D11_CPU_ACCESS_FLAG a, D3D11_CPU_ACCESS_FLAG b) noexcept { return D3D11_CPU_ACCESS_FLAG(static_cast<int>(a) & static_cast<int>(b)); }
+extern "C++" constexpr auto operator^(D3D11_CPU_ACCESS_FLAG a, D3D11_CPU_ACCESS_FLAG b) noexcept { return D3D11_CPU_ACCESS_FLAG(static_cast<int>(a) ^ static_cast<int>(b)); }
 
 enum class D3D11_CULL_MODE {
   D3D11_CULL_NONE = 1,

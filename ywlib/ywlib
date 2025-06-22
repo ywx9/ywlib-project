@@ -31,6 +31,12 @@
 #include <inc/wincodec.h>
 #include <inc/windows.h>
 
+#ifdef YWLIB_DEBUG
+inline constexpr bool debug = true;
+#else
+inline constexpr bool debug = false;
+#endif
+
 #ifdef __ywlib_import
 import ywlib;
 #pragma comment(lib, "comdlg32.lib")
@@ -212,6 +218,7 @@ template<typename T> concept unsigned_integral = integral<T> && !signed_integral
 template<typename T> concept floating          = float_type<T>;
 template<typename T> concept arithmetic        = integral<T> || float_type<T>;
 template<typename T> concept trivial           = __is_trivially_copyable(T);
+template<typename T> concept is_class          = std::is_class_v<T>;
 
 /// returns a object of the type that has the same bit representation as the value.
 template<trivial T> inline constexpr auto bitcast = []<trivial U>(const U& v) noexcept {
@@ -389,8 +396,6 @@ template<typename Fn> requires requires(const Fn& f) { f.operator()(); } struct 
   template<typename T> explicit(convertible_to<const Fn&, T>) constexpr operator T() const& noexcept(nt_convertible_to<const Fn&, T>) requires convertible_to<const Fn&, T> { return static_cast<T>(static_cast<const Fn&>(*this)); }
   template<typename T> explicit(convertible_to<Fn&&, T>) constexpr operator T() && noexcept(nt_convertible_to<Fn&&, T>) requires convertible_to<Fn&&, T> { return static_cast<T>(static_cast<Fn&&>(*this)); }
   template<typename T> explicit(convertible_to<const Fn&&, T>) constexpr operator T() const&& noexcept(nt_convertible_to<const Fn&&, T>) requires convertible_to<const Fn&&, T> { return static_cast<T>(static_cast<const Fn&&>(*this)); }
-  template<typename T> explicit constexpr operator T() const noexcept(std::is_nothrow_convertible_v<Fn, T>)
-    requires requires { static_cast<T>(Fn::operator()()); } { return static_cast<T>(Fn::operator()()); }
   template<typename... Ts> constexpr std::invoke_result_t<const Fn&, Ts...> operator()(Ts&&... Args) const
     noexcept(std::is_nothrow_invocable_v<Fn, Ts...>) { return Fn::operator()(static_cast<Ts&&>(Args)...); }
   template<typename Ct, typename Tr> friend std::basic_ostream<Ct, Tr>& operator<<(
@@ -2340,7 +2345,7 @@ template<stringable S> bool yes(S&& Text) noexcept {
 }
 
 /// converts string to integer
-inline constexpr auto stoi =[]<stringable S>(S&& s) -> int64_t {
+inline constexpr auto stoi = []<stringable S>(S&& s) -> int64_t {
   int64_t result;
   const auto str = unicode<char>(static_cast<S&&>(s));
   std::from_chars(str.data(), str.data() + str.size(), result);
@@ -2371,29 +2376,6 @@ template<char_type C> inline constexpr auto ftos = [](floating auto f) -> string
   temp.resize(tcr.ptr - temp.data());
   if constexpr (same_as<C, char>) return temp;
   else return unicode<C>(mv(temp));
-};
-}
-
-export namespace yw { // MARK: movable-const-object
-
-/// class to represent a movable constant object
-template<std::regular T> struct movable_const_object {
-  T object;
-public:
-  constexpr operator const T&() const { return object; }
-  constexpr const T& operator()() const { return object; }
-  explicit constexpr movable_const_object() noexcept(nt_constructible<T>) = default;
-  explicit constexpr movable_const_object(movable_const_object&& o) noexcept(nt_constructible<T, T&&>) : object{mv(o.object)} {}
-  constexpr movable_const_object& operator=(movable_const_object&& o) noexcept(nt_constructible<T, T&&>) { return object = mv(o.object), *this; }
-  template<typename... Ts> requires constructible<T, Ts...> explicit constexpr movable_const_object(Ts&&... Args) noexcept(nt_constructible<T, Ts...>) : object{fwd<Ts>(Args)...} {}
-};
-template<typename T> movable_const_object(T&&) -> movable_const_object<remove_cvref<T>>;
-}
-namespace std {
-template<typename T, typename C> struct formatter<yw::movable_const_object<T>, C> {
-  std::formatter<T, C> fmt;
-  constexpr auto parse(auto& ctx) { return fmt.parse(ctx); }
-  auto format(const yw::movable_const_object<T>& o, auto& ctx) const { return fmt.format(o, ctx); }
 };
 }
 #endif

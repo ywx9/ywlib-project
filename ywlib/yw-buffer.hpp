@@ -14,8 +14,16 @@ public:
   using value_type = T;
   explicit operator bool() const noexcept { return bool(d3d_buffer); }
   ::ID3D11Buffer* operator->() const noexcept { return d3d_buffer.get(); }
-  movable_const_object<int> count{};
+  const int count{};
+  /// default constructor
   buffer() noexcept = default;
+  /// move constructor
+  buffer(buffer&& b) noexcept : d3d_buffer(mv(b.d3d_buffer)), count(b.count) {}
+  /// move assignment
+  buffer& operator=(buffer&& b) noexcept {
+    if (this != &b) d3d_buffer = mv(b.d3d_buffer), const_cast<int&>(count) = b.count;
+    return *this;
+  }
   void from(const buffer& src, const source& _ = {}) {
     if (!src) throw std::runtime_error(format("Source buffer is empty: {} <- {}", source{}, _));
     if (!d3d_buffer) throw std::runtime_error(format("Destination buffer is empty: {} <- {}", source{}, _));

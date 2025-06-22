@@ -4,6 +4,13 @@
 
 namespace yw {
 
+inline constexpr auto default_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+inline constexpr GUID default_format_guid = []() -> GUID { // clang-format off
+  if constexpr (default_format == DXGI_FORMAT_B8G8R8A8_UNORM) return {0x6fddc324, 0x4e03, 0x4bfe, {0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10}};
+  else if constexpr (default_format == DXGI_FORMAT_R8G8B8A8_UNORM) return {0x3cc4a650, 0xa527, 0x4d37, {0xa9, 0x16, 0x31, 0x42, 0xc7, 0xeb, 0xed, 0xba}}; // clang-format on
+  else throw std::runtime_error("Unsupported default format");
+}();
+
 /// smart pointer for COM objects
 template<typename Com> class comptr {
   operator Com*() &&               = delete;
@@ -55,6 +62,26 @@ inline comptr<::ID3D11DeviceContext> d3d_context = [](comptr<::ID3D11DeviceConte
   const D3D_FEATURE_LEVEL levels[]{D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1};
   auto hr = ::D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, 0x20, levels, 2, 7, &d3d_device.get(), 0, &p.get());
   if (hr != 0) yw::ok(L"Failed to create D3D11 device and context", L"Fatal Error");
+  else if (debug) print("Created D3D11 device and context");
+  return p;
+}({});
+
+/// default blend state
+inline auto d3d_blend_state = [](comptr<::ID3D11BlendState> p) -> comptr<::ID3D11BlendState> {
+  D3D11_BLEND_DESC desc{};
+  desc.AlphaToCoverageEnable = false;
+  desc.IndependentBlendEnable = false;
+  desc.RenderTarget[0].BlendEnable = true;
+  desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+  desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+  desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+  desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+  desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+  desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+  desc.RenderTarget[0].RenderTargetWriteMask = 0xf;
+  auto hr = d3d_device->CreateBlendState(&desc, &p.get());
+  if (hr != 0) yw::ok(L"Failed to create D3D11 blend state", L"Fatal Error");
+  d3d_context->OMSetBlendState(p.get(), nullptr, 0xffffffff);
   return p;
 }({});
 
@@ -74,6 +101,23 @@ inline auto d3d_rasterizer_state = [](comptr<::ID3D11RasterizerState> p) -> comp
   auto hr = d3d_device->CreateRasterizerState(&desc, &p.get());
   if (hr != 0) yw::ok(L"Failed to create D3D11 rasterizer state", L"Fatal Error");
   d3d_context->RSSetState(p.get());
+  return p;
+}({});
+
+/// default sampler state
+inline auto d3d_sampler_state = [](comptr<::ID3D11SamplerState> p) -> comptr<::ID3D11SamplerState> {
+  D3D11_SAMPLER_DESC desc{};
+  desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+  desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+  desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+  desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+  desc.MaxAnisotropy = 1;
+  desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+  desc.MaxLOD = FLT_MAX;
+  desc.BorderColor[0] = 1.0f, desc.BorderColor[3] = 1.0f;
+  auto hr = d3d_device->CreateSamplerState(&desc, &p.get());
+  if (hr != 0) yw::ok(L"Failed to create D3D11 sampler state", L"Fatal Error");
+  d3d_context->PSSetSamplers(0, 1, &p.get());
   return p;
 }({});
 
@@ -176,6 +220,4 @@ public:
     dw_text_format->SetTextAlignment(DWRITE_TEXT_ALIGNMENT(alignment));
   }
 };
-
-
 }

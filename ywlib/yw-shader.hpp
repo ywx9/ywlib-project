@@ -39,7 +39,7 @@ void constant_buffers(Ts&&... Buffers) {
 }
 
 /// sets shader resources
-template<typename... Ts> requires((derived_from<remove_cvref<Ts>, texture> || specialization_of<remove_cvref<Ts>, structured_buffer>) && ...)
+template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11ShaderResourceView*>; } && ...)
 void shader_resources(Ts&&... Resources) {
   array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources.operator->()...};
   sys::d3d_context->VSSetShaderResources(0, sizeof...(Resources), views.data());
@@ -82,7 +82,7 @@ void constant_buffers(Ts&&... Buffers) {
 }
 
 /// sets shader resources
-template<typename... Ts> requires((derived_from<remove_cvref<Ts>, texture> || specialization_of<remove_cvref<Ts>, structured_buffer>) && ...)
+template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11ShaderResourceView*>; } && ...)
 void shader_resources(Ts&&... Resources) {
   array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources...};
   sys::d3d_context->PSSetShaderResources(0, sizeof...(Resources), views.data());
@@ -125,7 +125,7 @@ void constant_buffers(Ts&&... Buffers) {
 }
 
 /// sets shader resources
-template<typename... Ts> requires((derived_from<remove_cvref<Ts>, texture> || specialization_of<remove_cvref<Ts>, structured_buffer>) && ...)
+template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11ShaderResourceView*>; } && ...)
 void shader_resources(Ts&&... Resources) {
   array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources...};
   sys::d3d_context->GSSetShaderResources(0, sizeof...(Resources), views.data());
@@ -154,15 +154,13 @@ public:
     compile(source, Entry, _, &d3d_cs.get());
   }
   /// sets shader resources
-  template<typename... Ts>
-  requires((derived_from<remove_cvref<Ts>, texture> || specialization_of<remove_cvref<Ts>, structured_buffer>) && ...)
+  template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11ShaderResourceView*>; } && ...)
   static void set_resource(Ts&&... Resources) {
     array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources.operator->()...};
     main::sys::d3d_context->CSSetShaderResources(0, sizeof...(Resources), views.data());
   }
   /// sets read-write structured buffers
-  template<typename... Ts>
-  requires((specialization_of<remove_cvref<Ts>, rw_structured_buffer>) && ...)
+  template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11UnorderedAccessView*>; } && ...)
   static void set_readwrite(Ts&&... Resources) {
     array<::ID3D11UnorderedAccessView*, sizeof...(Resources)> views{Resources.operator->()...};
     main::sys::d3d_context->CSSetUnorderedAccessViews(0, sizeof...(Resources), views.data(), nullptr);

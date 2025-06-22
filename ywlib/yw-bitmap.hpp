@@ -1,12 +1,12 @@
 #pragma once
-#include <yw-com.hpp>
+#include <yw-shader.hpp>
 
 namespace yw {
 
 /// class to represent a bitmap for 2D drawing
 class bitmap {
 protected:
-  static constexpr auto pixel_format      = D2D1_PIXEL_FORMAT{DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED};
+  static constexpr auto pixel_format      = D2D1_PIXEL_FORMAT{default_format, D2D1_ALPHA_MODE_PREMULTIPLIED};
   static constexpr auto bitmap_properties = D2D1_BITMAP_PROPERTIES1{pixel_format, 96.f, 96.f, D2D1_BITMAP_OPTIONS_TARGET, nullptr};
   comptr<::ID2D1Bitmap1> d2d_bitmap;
 public:
@@ -64,35 +64,44 @@ public:
       main::sys::d2d_context->DrawLine({p1.x, p1.y}, {p2.x, p2.y}, Brush.operator->(), Width);
     }
   };
-  movable_const_object<int> width{}, height{};
+  const vector2<int> size{};
   explicit operator bool() const noexcept { return d2d_bitmap.operator bool(); }
   ::ID2D1Bitmap1* operator->() const noexcept { return d2d_bitmap.get(); }
+  /// default constructor
   bitmap() noexcept = default;
-  bitmap(const vector2<int>& wh, const source& _ = {}) : width(wh.x), height(wh.y) {
+  /// move constructor
+  bitmap(bitmap&& b) noexcept : d2d_bitmap(mv(b.d2d_bitmap)), size(b.size) {}
+  /// move assignment
+  bitmap& operator=(bitmap&& b) noexcept {
+    if (this != &b) d2d_bitmap = mv(b.d2d_bitmap), const_cast<vector2<int>&>(size) = b.size;
+    return *this;
+  }
+  /// creates a bitmap with the given size
+  explicit bitmap(const vector2<int>& wh, const source& _ = {}) : size(wh) {
     auto hr = main::sys::d2d_context->CreateBitmap({wh.x, wh.y}, nullptr, 0, &bitmap_properties, &d2d_bitmap.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
   }
-  bitmap(const path& File, const source& _ = {}) {
-    print(File);
+  /// creates a bitmap from a file
+  explicit bitmap(const path& File, const source& _ = {}) {
     comptr<::IWICBitmapDecoder> decoder{};
     auto hr = main::sys::wic_factory->CreateDecoderFromFilename(File.c_str(), nullptr, 0x80000000, {}, &decoder.get());
     if (hr != 0) throw std::runtime_error(format("CreateDecoderFromFilename failed ({:x}): {} <- {}", hr, source{}, _));
     comptr<::IWICBitmapFrameDecode> frame{};
     hr = decoder->GetFrame(0, &frame.get());
     if (hr != 0) throw std::runtime_error(format("IWICBitmapDecoder::GetFrame failed ({:x}): {} <- {}", hr, source{}, _));
-    hr = frame->GetSize((int*)&width, (int*)&height);
+    hr = frame->GetSize((int*)&size.x, (int*)&size.y);
     if (hr != 0) throw std::runtime_error(format("IWICBitmapFrameDecode::GetSize failed ({:x}): {} <- {}", hr, source{}, _)); // clang-format off
-    GUID pformat, guid = GUID{0x3cc4a650, 0xa527, 0x4d37, {0xa9, 0x16, 0x31, 0x42, 0xc7, 0xeb, 0xed, 0xba}}; // clang-format on
+    GUID pformat;
     hr = frame->GetPixelFormat(&pformat);
     if (hr != 0) throw std::runtime_error(format("IWICBitmapFrameDecode::GetPixelFormat failed ({:x}): {} <- {}", hr, source{}, _));
     comptr<::IWICFormatConverter> fc;
     hr = main::sys::wic_factory->CreateFormatConverter(&fc.get());
     if (hr != 0) throw std::runtime_error(format("CreateFormatConverter failed ({:x}): {} <- {}", hr, source{}, _));
     int can_convert{0};
-    hr = fc->CanConvert(pformat, guid, &can_convert);
+    hr = fc->CanConvert(pformat, default_format_guid, &can_convert);
     if (hr != 0) throw std::runtime_error(format("IWICFormatConverter::CanConvert failed ({:x}): {} <- {}", hr, source{}, _));
     if (!can_convert) throw std::runtime_error(format("IWICFormatConverter::CanConvert returns false: {} <- {}", source{}, _));
-    hr = fc->Initialize(frame, guid, WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeMedianCut);
+    hr = fc->Initialize(frame, default_format_guid, WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeMedianCut);
     if (hr != 0) throw std::runtime_error(format("IWICFormatConverter::Initialize failed ({:x}): {} <- {}", hr, source{}, _));
     main::sys::d2d_context->CreateBitmapFromWicBitmap(fc, nullptr, &d2d_bitmap.get());
   }
@@ -100,26 +109,17 @@ public:
   bitmap(::IDXGISwapChain1* sc, const source& _ = {}) {
     DXGI_SWAP_CHAIN_DESC1 scdesc;
     sc->GetDesc1(&scdesc);
-    width = movable_const_object(int(scdesc.Width));
-    height = movable_const_object(int(scdesc.Height));
+    const_cast<int&>(size.x) = int(scdesc.Width);
+    const_cast<int&>(size.y) = int(scdesc.Height);
     comptr<::ID3D11Texture2D> tex{};
     auto hr = sc->GetBuffer(0, __uuidof(::ID3D11Texture2D), (void**)&tex.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
     comptr<::IDXGISurface> surface;
     hr = tex->QueryInterface(&surface.get());
+    if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _)); // clang-format off
+    D2D1_BITMAP_PROPERTIES1 bp{D2D1_PIXEL_FORMAT{{}, D2D1_ALPHA_MODE_PREMULTIPLIED}, 96.0f, 96.0f, D2D1_BITMAP_OPTIONS(3), nullptr}; // clang-format on
+    hr = main::sys::d2d_context->CreateBitmapFromDxgiSurface(surface, &bp, &d2d_bitmap.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
-    // D2D1_BITMAP_PROPERTIES1 bp{
-    //   D2D1_PIXEL_FORMAT{{}, D2D1_ALPHA_MODE_PREMULTIPLIED},
-    //   96.0f, 96.0f, D2D1_BITMAP_OPTIONS(3), nullptr
-    // };
-    // hr = main::sys::d2d_context->CreateBitmapFromDxgiSurface(surface, &bp, &d2d_bitmap.get());
-    hr = main::sys::d2d_context->CreateBitmapFromDxgiSurface(surface, &bitmap_properties, &d2d_bitmap.get());
-    if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
-  }
-  /// gets the size
-  vector2<int> size() const noexcept {
-    if (!d2d_bitmap) return {};
-    return bitcast<vector2<int>>(d2d_bitmap->GetSize());
   }
   /// starts drawing
   drawing draw(const source& _ = {}) { return drawing(d2d_bitmap.get(), _); }
@@ -160,16 +160,17 @@ public:
 
 /// class to represent a texture for 3D rendering
 class texture : public bitmap {
+  friend class staging_texture;
 protected:
-  comptr<::ID3D11ShaderResourceView> d3d_srv;
   comptr<::ID3D11Texture2D> d3d_tex;
+  comptr<::ID3D11ShaderResourceView> d3d_srv;
   void init(const source& _) {
     comptr<::IDXGISurface> surface;
     auto hr = bitmap::d2d_bitmap->GetSurface(&surface.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
     hr = surface->QueryInterface(&d3d_tex.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_SRV_DIMENSION_TEXTURE2D};
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{default_format, D3D11_SRV_DIMENSION_TEXTURE2D};
     assign(srv_desc.Texture2D.MipLevels, 1);
     hr = main::sys::d3d_device->CreateShaderResourceView(d3d_tex.get(), &srv_desc, &d3d_srv.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
@@ -191,15 +192,18 @@ protected:
   void init(int msaa, const source& _) {
     msaa = msaa < 2 ? 1 : (msaa < 4 ? 2 : (msaa < 8 ? 4 : 8));
     comptr<::ID3D11Texture2D> temp; // clang-format off
-    D3D11_TEXTURE2D_DESC tex_desc{bitmap::width(), bitmap::height(), 1, 1, DXGI_FORMAT_D24_UNORM_S8_UINT, {uint32_t(msaa), 0}, {}, D3D11_BIND_DEPTH_STENCIL, {}, {}}; // clang-format on
-    auto hr = main::sys::d3d_device->CreateTexture2D(&tex_desc, nullptr, &temp.get());
+    D3D11_TEXTURE2D_DESC desc{bitmap::size.x, bitmap::size.y, 1, 1};
+    desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    desc.SampleDesc = {uint32_t(msaa), 0};
+    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    auto hr = main::sys::d3d_device->CreateTexture2D(&desc, nullptr, &temp.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
     hr = main::sys::d3d_device->CreateDepthStencilView(temp, nullptr, &d3d_dsv.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
-    temp.release(), tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM, tex_desc.BindFlags = D3D11_BIND_RENDER_TARGET;
-    hr = main::sys::d3d_device->CreateTexture2D(&tex_desc, nullptr, &temp.get());
+    temp.release(), desc.Format = default_format, desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    hr = main::sys::d3d_device->CreateTexture2D(&desc, nullptr, &temp.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
-    D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_RTV_DIMENSION_TEXTURE2DMS};
+    D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{default_format, D3D11_RTV_DIMENSION_TEXTURE2DMS};
     hr = main::sys::d3d_device->CreateRenderTargetView(temp, &rtv_desc, &d3d_rtv.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
   }
@@ -226,7 +230,7 @@ public:
     if (!target) return;
     comptr<::ID3D11Resource> src;
     target->d3d_rtv->GetResource(&src.get());
-    main::sys::d3d_context->ResolveSubresource(target->d3d_tex, 0, src, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+    main::sys::d3d_context->ResolveSubresource(target->d3d_tex, 0, src, 0, default_format);
     main::sys::d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
     target = nullptr;
   }
@@ -234,7 +238,7 @@ public:
     if (target) throw std::logic_error(format("already rendering: {} <- {}", source{}, _));
     if (!Canvas) throw std::runtime_error(format("invalid render target: {} <- {}", source{}, _));
     target = &Canvas;
-    D3D11_VIEWPORT vp{0.0f, 0.0f, float(Canvas.width), float(Canvas.height), 0.0f, 1.0f};
+    D3D11_VIEWPORT vp{0.0f, 0.0f, float(Canvas.size.x), float(Canvas.size.y), 0.0f, 1.0f};
     main::sys::d3d_context->RSSetViewports(1, &vp);
     main::sys::d3d_context->OMSetRenderTargets(1, &target->d3d_rtv.get(), target->d3d_dsv.get());
   }
@@ -252,4 +256,89 @@ public:
 
 inline canvas::rendering canvas::render(const source& _) { return rendering(*this, _); }
 inline canvas::rendering canvas::render(const color& Clear, const source& _) { return rendering(*this, Clear, _); }
+
+// /// class to represent a read/write texture for compute shaders
+// class rw_texture {
+// protected:
+//   comptr<::ID3D11Texture2D> d3d_tex;
+//   comptr<::ID3D11UnorderedAccessView> d3d_uav;
+//   void init(const source& _) {
+//     D3D11_TEXTURE2D_DESC desc{size.x, size.y, 1, 1};
+//     desc.Format         = DXGI_FORMAT_R32G32B32A32_FLOAT;
+//     desc.SampleDesc     = {1, 0};
+//     desc.Usage          = D3D11_USAGE_DEFAULT;
+//     desc.BindFlags      = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+//     auto hr = main::sys::d3d_device->CreateTexture2D(&desc, nullptr, &d3d_tex.get());
+//     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
+//     D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc{DXGI_FORMAT_R32G32B32A32_FLOAT, D3D11_UAV_DIMENSION_TEXTURE2D};
+//     assign(uav_desc.Texture2D.MipSlice, 0);
+//     hr = main::sys::d3d_device->CreateUnorderedAccessView(d3d_tex.get(), &uav_desc, &d3d_uav.get());
+//     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
+//   }
+// public:
+//   const vector2<int> size{};
+//   explicit operator bool() const noexcept { return d3d_tex != nullptr && d3d_uav != nullptr; }
+//   ::ID3D11UnorderedAccessView* operator->() const noexcept { return d3d_uav.get(); }
+//   /// default constructor
+//   rw_texture() = default;
+//   /// move constructor
+//   rw_texture(rw_texture&& t) noexcept : d3d_tex(mv(t.d3d_tex)), d3d_uav(mv(t.d3d_uav)), size(t.size) {}
+//   /// move assignment
+//   rw_texture& operator=(rw_texture&& t) noexcept {
+//     if (this != &t) d3d_tex = mv(t.d3d_tex), d3d_uav = mv(t.d3d_uav), const_cast<vector2<int>&>(size) = t.size;
+//     return *this;
+//   }
+//   /// creates a read/write texture with given width and height
+//   explicit rw_texture(vector2<int> wh, const source& _ = {}) : size(wh) { init(_); }
+// };
+
+
+// /// class to represent a staging texture for CPU access
+// class staging_texture {
+// protected:
+//   static constexpr strview converter_hlsl = R"(#pragma pack_matrix(row_major)
+
+// )";
+//   inline static compute_shader converter{converter_hlsl};
+//   comptr<::ID3D11Texture2D> d3d_tex;
+//   void init(const source& _) {
+//     D3D11_TEXTURE2D_DESC desc{size.x, size.y, 1, 1};
+//     desc.Format         = DXGI_FORMAT_R32G32B32A32_FLOAT;
+//     desc.SampleDesc     = {1, 0};
+//     desc.Usage          = D3D11_USAGE_STAGING;
+//     desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+//     auto hr = main::sys::d3d_device->CreateTexture2D(&desc, nullptr, &d3d_tex.get());
+//     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
+//   }
+// public:
+//   const vector2<int> size{};
+//   explicit operator bool() const noexcept { return d3d_tex != nullptr; }
+//   ::ID3D11Texture2D* operator->() const noexcept { return d3d_tex.get(); }
+//   /// default constructor
+//   staging_texture() = default;
+//   /// move constructor
+//   staging_texture(staging_texture&& t) noexcept : d3d_tex(mv(t.d3d_tex)), size(t.size) {}
+//   /// move assignment
+//   staging_texture& operator=(staging_texture&& t) noexcept {
+//     if (this != &t) d3d_tex = mv(t.d3d_tex), const_cast<vector2<int>&>(size) = t.size;
+//     return *this;
+//   }
+//   /// creates a staging texture with given width and height
+//   explicit staging_texture(vector2<int> wh, const source& _ = {}) : size(wh) { init(_); }
+//   /// creates a staging texture from cpu memory
+//   explicit staging_texture(const vector2<int>& wh, const color* data, const source& _ = {}) : size(wh) {
+//     init(_);
+//     D3D11_MAPPED_SUBRESOURCE mapped;
+//     auto hr = main::sys::d3d_context->Map(d3d_tex.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+//     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
+//     std::memcpy(mapped.pData, data, wh.x * wh.y * sizeof(color));
+//     main::sys::d3d_context->Unmap(d3d_tex.get(), 0);
+//   }
+//   /// creates a staging texture from given texture
+//   explicit staging_texture(const derived_from<texture_base> auto& t, const source& _ = {}) : size(t.size) {
+//     init(_), main::sys::d3d_context->CopyResource(d3d_tex.get(), t.operator->());
+//   }
+//   /// creates a staging texture from cpu memory
+//   // explicit staging_texture(const
+// };
 }
