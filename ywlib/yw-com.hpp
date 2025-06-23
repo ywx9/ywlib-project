@@ -4,10 +4,10 @@
 
 namespace yw {
 
-inline constexpr auto default_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-inline constexpr GUID default_format_guid = []() -> GUID { // clang-format off
-  if constexpr (default_format == DXGI_FORMAT_B8G8R8A8_UNORM) return {0x6fddc324, 0x4e03, 0x4bfe, {0xb1, 0x85, 0x3d, 0x77, 0x76, 0x8d, 0xc9, 0x10}};
-  else if constexpr (default_format == DXGI_FORMAT_R8G8B8A8_UNORM) return {0x3cc4a650, 0xa527, 0x4d37, {0xa9, 0x16, 0x31, 0x42, 0xc7, 0xeb, 0xed, 0xba}}; // clang-format on
+inline constexpr auto default_dxgi_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+inline constexpr GUID default_dxgi_format_guid = []() -> GUID { // clang-format off
+  if constexpr (default_dxgi_format == DXGI_FORMAT_B8G8R8A8_UNORM) return WICPixelFormat32bppPBGRA;
+  else if constexpr (default_dxgi_format == DXGI_FORMAT_R8G8B8A8_UNORM) return WICPixelFormat32bppPRGBA;
   else throw std::runtime_error("Unsupported default format");
 }();
 
@@ -75,8 +75,8 @@ inline auto d3d_blend_state = [](comptr<::ID3D11BlendState> p) -> comptr<::ID3D1
   desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
   desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
   desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-  desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-  desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+  desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+  desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
   desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
   desc.RenderTarget[0].RenderTargetWriteMask = 0xf;
   auto hr = d3d_device->CreateBlendState(&desc, &p.get());
@@ -111,10 +111,8 @@ inline auto d3d_sampler_state = [](comptr<::ID3D11SamplerState> p) -> comptr<::I
   desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
   desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
   desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-  desc.MaxAnisotropy = 1;
   desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
   desc.MaxLOD = FLT_MAX;
-  desc.BorderColor[0] = 1.0f, desc.BorderColor[3] = 1.0f;
   auto hr = d3d_device->CreateSamplerState(&desc, &p.get());
   if (hr != 0) yw::ok(L"Failed to create D3D11 sampler state", L"Fatal Error");
   d3d_context->PSSetSamplers(0, 1, &p.get());

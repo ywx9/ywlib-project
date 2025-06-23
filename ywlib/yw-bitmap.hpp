@@ -6,7 +6,7 @@ namespace yw {
 /// class to represent a bitmap for 2D drawing
 class bitmap {
 protected:
-  static constexpr auto pixel_format      = D2D1_PIXEL_FORMAT{default_format, D2D1_ALPHA_MODE_PREMULTIPLIED};
+  static constexpr auto pixel_format      = D2D1_PIXEL_FORMAT{default_dxgi_format, D2D1_ALPHA_MODE_PREMULTIPLIED};
   static constexpr auto bitmap_properties = D2D1_BITMAP_PROPERTIES1{pixel_format, 96.f, 96.f, D2D1_BITMAP_OPTIONS_TARGET, nullptr};
   comptr<::ID2D1Bitmap1> d2d_bitmap;
 public:
@@ -98,10 +98,10 @@ public:
     hr = main::sys::wic_factory->CreateFormatConverter(&fc.get());
     if (hr != 0) throw std::runtime_error(format("CreateFormatConverter failed ({:x}): {} <- {}", hr, source{}, _));
     int can_convert{0};
-    hr = fc->CanConvert(pformat, default_format_guid, &can_convert);
+    hr = fc->CanConvert(pformat, default_dxgi_format_guid, &can_convert);
     if (hr != 0) throw std::runtime_error(format("IWICFormatConverter::CanConvert failed ({:x}): {} <- {}", hr, source{}, _));
     if (!can_convert) throw std::runtime_error(format("IWICFormatConverter::CanConvert returns false: {} <- {}", source{}, _));
-    hr = fc->Initialize(frame, default_format_guid, WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeMedianCut);
+    hr = fc->Initialize(frame, default_dxgi_format_guid, WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeMedianCut);
     if (hr != 0) throw std::runtime_error(format("IWICFormatConverter::Initialize failed ({:x}): {} <- {}", hr, source{}, _));
     main::sys::d2d_context->CreateBitmapFromWicBitmap(fc, nullptr, &d2d_bitmap.get());
   }
@@ -170,8 +170,8 @@ protected:
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
     hr = surface->QueryInterface(&d3d_tex.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{default_format, D3D11_SRV_DIMENSION_TEXTURE2D};
-    assign(srv_desc.Texture2D.MipLevels, 1);
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{default_dxgi_format, D3D11_SRV_DIMENSION_TEXTURE2D};
+    srv_desc.Texture2D.MipLevels = 1;
     hr = main::sys::d3d_device->CreateShaderResourceView(d3d_tex.get(), &srv_desc, &d3d_srv.get());
     if (hr != 0) throw std::runtime_error(format("Error {:x}: {} <- {}", hr, source{}, _));
   }
@@ -200,10 +200,11 @@ protected:
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
     hr = main::sys::d3d_device->CreateDepthStencilView(temp, nullptr, &d3d_dsv.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
-    temp.release(), desc.Format = default_format, desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    temp.release();
+    desc.Format = default_dxgi_format, desc.BindFlags = D3D11_BIND_RENDER_TARGET;
     hr = main::sys::d3d_device->CreateTexture2D(&desc, nullptr, &temp.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
-    D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{default_format, D3D11_RTV_DIMENSION_TEXTURE2DMS};
+    D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{default_dxgi_format, D3D11_RTV_DIMENSION_TEXTURE2DMS};
     hr = main::sys::d3d_device->CreateRenderTargetView(temp, &rtv_desc, &d3d_rtv.get());
     if (hr != 0) throw std::runtime_error(format("error {:x}: {} <- {}", hr, source{}, _));
   }
@@ -215,7 +216,7 @@ public:
   ::ID3D11RenderTargetView* operator->() const noexcept { return d3d_rtv.get(); }
   canvas() noexcept = default;
   explicit canvas(texture&& t, arithmetic auto msaa, const source& _ = {}) : texture(mv(t)) { init(int(msaa), _); }
-  explicit canvas(texture&& t, const source& _) : texture(mv(t)) { init(8, _); }
+  explicit canvas(texture&& t, const source& _ = {}) : texture(mv(t)) { init(8, _); }
   explicit canvas(vector2<int> wh, arithmetic auto msaa, const source& _ = {}) : texture(wh, _) { init(int(msaa), _); }
   explicit canvas(vector2<int> wh, const source& _ = {}) : texture(wh, _) { init(8, _); }
   rendering render(const source& _ = {});
@@ -230,7 +231,7 @@ public:
     if (!target) return;
     comptr<::ID3D11Resource> src;
     target->d3d_rtv->GetResource(&src.get());
-    main::sys::d3d_context->ResolveSubresource(target->d3d_tex, 0, src, 0, default_format);
+    main::sys::d3d_context->ResolveSubresource(target->d3d_tex, 0, src, 0, default_dxgi_format);
     main::sys::d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
     target = nullptr;
   }

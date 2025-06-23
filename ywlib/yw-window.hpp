@@ -96,7 +96,7 @@ inline MSG message{};
 inline comptr<::IDXGISwapChain1> swapchain = [](comptr<::IDXGISwapChain1> p) -> comptr<::IDXGISwapChain1> {
   RECT r;
   ::GetClientRect(sys::hwnd, &r); // clang-format off
-  DXGI_SWAP_CHAIN_DESC1 desc{uint32_t(r.right), uint32_t(r.bottom), default_format, false, {1, 0}, {}, 2}; // clang-format on
+  DXGI_SWAP_CHAIN_DESC1 desc{uint32_t(r.right), uint32_t(r.bottom), default_dxgi_format, false, {1, 0}, {}, 2}; // clang-format on
   desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
   desc.SwapEffect  = DXGI_SWAP_EFFECT_DISCARD;
   auto hr          = dxgi_factory->CreateSwapChainForHwnd(d3d_device.get(), hwnd, &desc, nullptr, nullptr, &p.get());
@@ -109,8 +109,11 @@ inline comptr<::IDXGISwapChain1> swapchain = [](comptr<::IDXGISwapChain1> p) -> 
 inline bitmap rendertarget = [] {
   try {
     return bitmap(swapchain.get());
-  } catch (const std::exception& e) { yw::ok(L"Failed to create render-target", L"Fatal Error"); }
-  return bitmap{};
+  } catch (const std::exception& e) {
+    print("Error: {}", e.what());
+    yw::ok(L"Failed to create render-target", L"Fatal Error");
+    return bitmap{};
+  }
 }();
 }
 
@@ -165,6 +168,10 @@ struct Size {
     main::sys::rendertarget = bitmap(main::sys::swapchain.get());
     ::SetWindowPos(sys::hwnd, nullptr, 0, 0, size.x + main::sys::padding.z, size.y + main::sys::padding.w, SWP_NOMOVE | SWP_NOZORDER);
   }
+  /// sets the size of the main-window
+  void operator()(convertible_to<int> auto&& Width, convertible_to<int> auto&& Height, const source& _ = {}) const {
+    operator()(vector2<int>{static_cast<int>(Width), static_cast<int>(Height)}, _);
+  }
 };
 /// gets/sets the size of the main-window
 inline constexpr caster<Size> size{};
@@ -212,6 +219,22 @@ inline const Key numlock(0x90), scrolllock(0x91);
 inline const Key lshift(0xA0), rshift(0xA1), lcontrol(0xA2), rcontrol(0xA3), lmenu(0xA4), rmenu(0xA5);
 }
 
+/// functor for `yw::main::point`
+class Point : public vector2<int> {
+  inline static vector2<int> old{};
+public:
+  /// gets the cursor position
+  vector2<int> operator()() const { return {x, y}; }
+  /// sets the cursor position
+  void operator()(vector2<int> xy) { ::ClientToScreen(sys::hwnd, (POINT*)&xy), ::SetCursorPos(x = xy.x, y = xy.y); }
+  /// gets delta of the cursor position
+  vector2<int> delta() const { return {x - old.x, y - old.y}; }
+  /// updates cursor position
+  void update() { old = {x, y}, ::GetCursorPos((POINT*)this), ::ScreenToClient(sys::hwnd, (POINT*)this); }
+};
+/// cursor position relative to the client area of the main-window
+inline caster<Point> point{};
+
 /// functor for `yw::main::update`
 struct Update {
   /// updates the main-window
@@ -223,6 +246,7 @@ struct Update {
         continue;
       }
       Key::update();
+      point.update();
       return sys::is_active;
     }
     return false;
@@ -238,5 +262,8 @@ inline bitmap::drawing draw() { return main::sys::rendertarget.draw(); }
 
 /// begins drawing on the main-window with a clear color
 inline bitmap::drawing draw(const yw::color& Clear) { return main::sys::rendertarget.draw(Clear); }
+
+/// saves the screenshot
+inline void screenshot(const path& File) { sys::rendertarget.to_file(File); }
 }
 }

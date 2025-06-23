@@ -84,7 +84,7 @@ void constant_buffers(Ts&&... Buffers) {
 /// sets shader resources
 template<typename... Ts> requires(requires(Ts&& ts) { { ts.operator->() } -> convertible_to<::ID3D11ShaderResourceView*>; } && ...)
 void shader_resources(Ts&&... Resources) {
-  array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources...};
+  array<::ID3D11ShaderResourceView*, sizeof...(Resources)> views{Resources.operator->()...};
   sys::d3d_context->PSSetShaderResources(0, sizeof...(Resources), views.data());
 }
 }

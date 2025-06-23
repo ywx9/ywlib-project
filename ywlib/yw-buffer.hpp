@@ -122,10 +122,10 @@ public:
   explicit structured_buffer(size_t Count, const source& _ = {}) : buffer<T>(Count) { _init(nullptr, _); }
   explicit structured_buffer(const T* Data, size_t Count, const source& _ = {}) : buffer<T>(Count) { _init(Data, _); }
   template<contiguous_range R> requires same_as<iter_value_t<R>, T>
-  explicit structured_buffer(R&& r, const source& _ = {}) : structured_buffer(data(r), size(r), _) {}
+  explicit structured_buffer(R&& r, const source& _ = {}) : structured_buffer(f::data(r), f::size(r), _) {}
   template<contiguous_range R> requires same_as<iter_value_t<R>, T> void from(R&& r, const source& _ = {}) {
-    if (buffer<T>::count != yw::size(r)) throw std::runtime_error(format("invalid source: {} <- {}", source{}, _));
-    main::sys::d3d_context->UpdateSubresource(buffer<T>::operator ::ID3D11Buffer*(), 0, nullptr, yw::data(r), 0, 0);
+    if (buffer<T>::count != f::size(r)) throw std::runtime_error(format("invalid source: {} <- {}", source{}, _));
+    main::sys::d3d_context->UpdateSubresource(buffer<T>::operator ::ID3D11Buffer*(), 0, nullptr, f::data(r), 0, 0);
   }
 };
 template<typename T> structured_buffer(const buffer<T>&) -> structured_buffer<T>;
@@ -164,7 +164,7 @@ public:
     : rw_structured_buffer(data(r), size(r), _) {}
   /// assigns cpu data to the buffer
   template<contiguous_range<T> R> void from(R&& r, const source& _ = {}) {
-    if (buffer<T>::count != yw::size(r)) throw std::runtime_error(format("Buffer size mismatch: {} <- {}", source{}, _));
+    if (buffer<T>::count != f::size(r)) throw std::runtime_error(format("Buffer size mismatch: {} <- {}", source{}, _));
     main::sys::d3d_context->UpdateSubresource(this, 0, nullptr, data(r), 0, 0);
   }
 };

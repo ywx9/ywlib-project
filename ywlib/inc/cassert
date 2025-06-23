@@ -5,7 +5,7 @@
 #else
 #define __ywlib_widen_(x) L##x
 #define __ywlib_widen(x) __ywlib_widen_(x)
-#define assert(expression) ((void)(!expression && (::_wassert(L#expression, __ywlib_widen(__FILE__), __LINE__), 0)))
+#define assert(expression) ((void)(!(expression) && (::_wassert(L#expression, __ywlib_widen(__FILE__), __LINE__), 0)))
 #endif
 
 #ifndef __ywlib_import

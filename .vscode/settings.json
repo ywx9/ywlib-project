@@ -1,8 +1,9 @@
 {
   "files.exclude": {
+    "ywlib/bin/*": true,
     "ywlib/inc/*": true,
     "ywlib/lib/*": true,
-    "ywlib/bin/*": true,
+    "ywlib/std/*": true,
   },
   "search.exclude": {
     "ywlib/inc/*": false,

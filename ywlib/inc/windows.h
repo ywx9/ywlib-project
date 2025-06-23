@@ -524,6 +524,7 @@ struct OPENFILENAMEW {
 };
 static_assert(sizeof(OPENFILENAMEW) == 152);
 
+BOOL __stdcall ClientToScreen(HANDLE hWnd, POINT* lpPoint);
 HRESULT __stdcall CoInitializeEx(void*, int);
 wchar_t** __stdcall CommandLineToArgvW(const wchar_t*, int*);
 void __stdcall CoUninitialize();
@@ -565,7 +566,9 @@ BOOL __stdcall QueryPerformanceFrequency(void*);
 
 ATOM __stdcall RegisterClassExW(const WNDCLASSEXW* lpWndClass);
 
+BOOL __stdcall ScreenToClient(HANDLE hWnd, POINT* lpPoint);
 HANDLE __stdcall SetActiveWindow(HANDLE hWnd);
+BOOL __stdcall SetCursorPos(int x, int y);
 HANDLE __stdcall SetForegroundWindow(HANDLE hWnd);
 void* __stdcall SetWindowLongPtrW(HANDLE hWnd, int nIndex, void* dwNewLong);
 BOOL __stdcall SetWindowPos(HANDLE hwnd, HANDLE hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
