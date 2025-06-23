@@ -537,6 +537,7 @@ BOOL __stdcall DragFinish(HANDLE hDrop);
 BOOL __stdcall DragQueryFileW(HANDLE hDrop, int iFile, wchar_t* lpFile, int cch);
 BOOL __stdcall DragQueryPoint(HANDLE hDrop, POINT* lppt);
 
+BOOL __stdcall GetClassInfoExW(HANDLE hInstance, const wchar_t* lpClassName, WNDCLASSEXW* lpWndClass);
 BOOL __stdcall GetClientRect(HANDLE hWnd, RECT* lpRect);
 const wchar_t* __stdcall GetCommandLineW();
 BOOL __stdcall GetCursorPos(POINT* lpPoint);
@@ -546,6 +547,7 @@ BOOL __stdcall GetMessageW(MSG* lpMsg, HANDLE hWnd, int wMsgFilterMin, int wMsgF
 HANDLE __stdcall GetModuleHandleW(const wchar_t* lpModuleName);
 BOOL __stdcall GetOpenFileNameW(OPENFILENAMEW*);
 BOOL __stdcall GetSaveFileNameW(OPENFILENAMEW*);
+HANDLE __stdcall GetStockObject(int nObj);
 const char* __stdcall GetUserNameW(wchar_t*, int*);
 void* __stdcall GetWindowLongPtrW(HANDLE hWnd, int nIndex);
 BOOL __stdcall GetWindowRect(HANDLE hWnd, RECT* lpRect);
@@ -568,6 +570,7 @@ ATOM __stdcall RegisterClassExW(const WNDCLASSEXW* lpWndClass);
 
 BOOL __stdcall ScreenToClient(HANDLE hWnd, POINT* lpPoint);
 HANDLE __stdcall SetActiveWindow(HANDLE hWnd);
+int __stdcall SetBkMode(HANDLE hdc, int mode);
 BOOL __stdcall SetCursorPos(int x, int y);
 HANDLE __stdcall SetForegroundWindow(HANDLE hWnd);
 void* __stdcall SetWindowLongPtrW(HANDLE hWnd, int nIndex, void* dwNewLong);

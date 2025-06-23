@@ -20,7 +20,12 @@ inline bool is_active = false;
 /// main-window procedure
 size_t __stdcall window_proc(HANDLE hw, int msg, size_t wp, size_t lp) {
   if (userproc && userproc(wmessage(msg), wp, lp)) return 0;
-  else if (msg == WM_DROPFILES) {
+  else if (msg == WM_CTLCOLOREDIT) {
+    print(source{});
+    HANDLE hdc = (HANDLE)wp;
+    ::SetBkMode(hdc, 1);
+    return (size_t)::GetStockObject(5); // NULL BRUSH
+  } else if (msg == WM_DROPFILES) {
     auto drop = (HANDLE)wp;
     POINT pt;
     ::DragQueryPoint(drop, &pt);
@@ -63,7 +68,7 @@ inline const uint16_t class_atom = [](WNDCLASSEXW wc) {
   auto a           = ::RegisterClassExW(&wc);
   if (!a) yw::ok(L"Failed to register window class", L"Fatal Error");
   return a;
-}({sizeof(WNDCLASSEXW), 0, window_proc});
+}({sizeof(WNDCLASSEXW), {}, window_proc});
 
 /// main-window padding
 inline vector4<int> padding{};
@@ -71,7 +76,7 @@ inline vector4<int> padding{};
 /// main-window handle
 inline const HANDLE hwnd = []() -> HANDLE {
   constexpr int sz{400};
-  auto hw = ::CreateWindowExW(WS_EX_ACCEPTFILES, class_name, 0, WS_SYSMENU, 0, 0, sz, sz, 0, 0, instance, 0);
+  auto hw = ::CreateWindowExW(WS_EX_ACCEPTFILES, class_name, 0, WS_SYSMENU | WS_CLIPCHILDREN, 0, 0, sz, sz, 0, 0, instance, 0);
   if (!hw) return yw::ok(L"Failed to create main-window", L"Fatal Error"), nullptr;
   is_active = true;
   ::GetClientRect(hw, (RECT*)&padding);
@@ -234,6 +239,32 @@ public:
 };
 /// cursor position relative to the client area of the main-window
 inline caster<Point> point{};
+
+class edit {
+  inline static const WNDCLASSEXW original_wndclass = [](WNDCLASSEXW wc) -> WNDCLASSEXW {
+    ::GetClassInfoExW(sys::instance, L"EDIT", &wc);
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    return wc;
+  }({});
+  static size_t __stdcall customized_wndproc(HANDLE hwnd, int msg, size_t wp, size_t lp) {
+    switch (wmessage(msg)) {
+    }
+    return original_wndclass.lpfnWndProc(hwnd, msg, wp, lp);
+  }
+  inline static const WNDCLASSEXW customized_wndclass = []() -> WNDCLASSEXW {
+    WNDCLASSEXW wc   = original_wndclass;
+    wc.lpszClassName = L"__ywlib_edit__";
+    return wc;
+  }();
+  inline static const uint16_t customized_wndclass_atom = ::RegisterClassExW(&customized_wndclass);
+public:
+  HANDLE hwnd;
+  edit(vector2<int> xy, vector2<int> wh, const source& _ = {})
+    : hwnd(::CreateWindowExW(WS_EX_TRANSPARENT, customized_wndclass.lpszClassName, nullptr, WS_CHILD | WS_VISIBLE, //
+                             xy.x, xy.y, wh.x, wh.y, sys::hwnd, nullptr, sys::instance, nullptr)) {
+    if (!hwnd) throw std::runtime_error(format("Failed to create edit control: {} <- {}", source{}, _));
+  }
+};
 
 /// functor for `yw::main::update`
 struct Update {
