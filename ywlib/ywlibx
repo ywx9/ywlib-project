@@ -2,6 +2,7 @@
 #include <ywlib>
 
 #include <yw-args.hpp>
+#include <yw-base64.hpp>
 #include <yw-bitmap.hpp>
 #include <yw-buffer.hpp>
 #include <yw-camera.hpp>
