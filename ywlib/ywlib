@@ -1992,9 +1992,13 @@ template<char_type C> using string      = std::basic_string<C>;
 template<char_type C> using string_view = std::basic_string_view<C>;
 static_assert(sizeof(wchar_t) == 2);
 
+using wchar = wchar_t;
+using uchar = char32_t;
+
 using str      = string<char>;
 using wstr     = string<wchar_t>;
 using ustr     = string<char32_t>;
+
 using strview  = string_view<char>;
 using wstrview = string_view<wchar_t>;
 using ustrview = string_view<char32_t>;
