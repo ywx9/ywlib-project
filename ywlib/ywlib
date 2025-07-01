@@ -133,6 +133,8 @@ import ywlib;
 
 export namespace yw { // MARK: CORE
 
+using namespace std::literals;
+
 using byte      = std::byte;
 using nullptr_t = std::nullptr_t;
 
