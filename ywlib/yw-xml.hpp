@@ -23,12 +23,16 @@ public:
     }
     static std::runtime_error create(const ustrview::iterator p, const ustrview d, const char* m) {
       auto [line, column] = position_in_document(p, d);
-      auto s{format("yw-xml error at ({},{}); {}", line, column, m)};
+      auto s{format("yw-xml-error({:>4},{:>4}); {}", line, column, m)};
       return std::runtime_error(s);
     }
   public:
     exception(const ustrview::iterator Position, const ustrview& Document, const char* Message)
       : std::runtime_error(create(Position, Document, Message)) {}
+    exception(const ustrview::iterator Position, const ustrview& Document, strview Message)
+      : std::runtime_error(create(Position, Document, Message.data())) {}
+    exception(const ustrview::iterator Position, const ustrview& Document, const str& Message)
+      : std::runtime_error(create(Position, Document, Message.data())) {}
   };
 
   /// `PI`
@@ -65,175 +69,387 @@ public:
 
   /// helper functions
   struct helper {
-    /// returns `true` if the character is an alphabetic character
-    static constexpr auto is_alphabet = [](const uchar c) noexcept {
-      return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
-    };
-    /// returns `true` if the character is a valid XML character
-    static constexpr auto is_character = [](const uchar c) noexcept {
-      return c == 0x9 || c == 0xa || c == 0xd || (0x20 <= c && c <= 0xd7ff) || (0xe000 <= c && (c & 0xfffe) != 0xfffe);
-    };
+
     /// returns `true` if the character is a digit
     static constexpr auto is_digit = [](const uchar c) noexcept {
       return '0' <= c && c <= '9';
     };
-    /// returns `true` if the character can be used for encoding names
-    static constexpr auto is_encname = [](const uchar c) noexcept {
-      return is_alphabet(c) || is_digit(c) || c == '-' || c == '_' || c == '.';
+
+    /// returns `true` if the character is a hexadecimal digit
+    static constexpr auto is_xdigit = [](const uchar c) noexcept {
+      return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     };
+
+    /// returns `true` if the character is an alphabetic character
+    static constexpr auto is_alphabet = [](const uchar c) noexcept {
+      return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+    };
+
+    /// returns `true` if the character is an alphabetic character or a digit
+    static constexpr auto is_alphanum = [](const uchar c) noexcept {
+      return is_alphabet(c) || is_digit(c);
+    };
+
+    /// returns `true` if the character can be used for encoding names except the first character
+    static constexpr auto is_encnamechar = [](const uchar c) noexcept {
+      return is_alphanum(c) || c == '-' || c == '_' || c == '.';
+    };
+
+    /// returns `true` if the character is a valid XML character
+    static constexpr auto is_character = [](const uchar c) noexcept {
+      return c == 0x9 || c == 0xa || c == 0xd || (0x20 <= c && c <= 0xd7ff) || (0xe000 <= c && (c & 0xfffe) != 0xfffe);
+    };
+
     /// returns `true` if the character can be used for names except the first character
     static constexpr auto is_namechar = [](const uchar c) noexcept {
-      return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= ':') || c == '.' || c == '_' ||
+      return is_alphabet(c) || ('0' <= c && c <= ':') || c == '.' || c == '_' ||
              (c == 0xb7) || (0xc0 <= c && c <= 0x2ff && c != 0xd7 && c != 0xf7) ||
              (0x300 <= c && c <= 0x1fff && c != 0x37e) || c == 0x200c || c == 0x200d || c == 0x203f || c == 0x2040 ||
              (0x2070 <= c && c <= 0x218f) || (0x2c00 <= c && c <= 0x2fef) || (0x3001 <= c && c <= 0xd7ff) ||
              (0xf900 <= c && c <= 0xfdcf) || (0xfdf0 <= c && (c & 0xfffe) != 0xfffe);
     };
+
     /// returns `true` if the character can be used as the first character of a name
     static constexpr auto is_namestartchar = [](const uchar c) noexcept {
-      return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == ':' || c == '_' ||
+      return is_alphabet(c) || c == ':' || c == '_' ||
              (0xc0 <= c && c <= 0x2ff && c != 0xd7 && c != 0xf7) ||
              (0x370 <= c && c <= 0x1fff && c != 0x37e) || c == 0x200c || c == 0x200d ||
              (0x2070 <= c && c <= 0x218f) || (0x2c00 <= c && c <= 0x2fef) || (0x3001 <= c && c <= 0xd7ff) ||
              (0xf900 <= c && c <= 0xfdcf) || (0xfdf0 <= c && (c & 0xfffe) != 0xfffe);
     };
+
     /// returns `true` if the character can be used in a public identifier
     static constexpr auto is_pubidchar = [](const uchar c) noexcept {
       return c == 0xd || c == 0xa || (0x5f <= c && c <= 0x7a && (c != 0x60)) ||
              (0x20 <= c && c <= 0x90 && (c != 0x22 && c != 0x26 && c != 0x60 && c != 0x62 && c != 0x64));
     };
+
     /// returns `true` if the character is a whitespace character
     static constexpr auto is_whitespace = [](const uchar c) noexcept {
       return c == 0x20 || c == 0x9 || c == 0xd || c == 0xa;
     };
-    /// extracts `S ::= whitespaces`
-    static constexpr ustrview extract_whitespaces(ustrview& sv) {
-      auto it = std::ranges::find_if_not(sv, helper::is_whitespace);
-      ustrview result{sv.begin(), it};
+
+    /// represents "unexpected end of input"
+    static constexpr strview represent_unexpected_end() {
+      return "unexpected end of input"sv;
+    }
+
+    /// represents "missing [quote]"
+    static constexpr strview represent_missing_quote(const uchar Quote) {
+      if (Quote == '"') return "missing '\"'";
+      else if (Quote == '\'') return "missing \"'\"";
+      else throw std::invalid_argument("invalid quote character");
+    }
+
+    /// internal implementation of `extract_whitespace`; `!sv.empty() && is_whitespace(sv.front())`
+    static constexpr ustrview extract_whitespace_internal(ustrview& sv, const ustr& Raw) {
+      ustrview result(sv.begin(), std::ranges::find_if_not(sv.begin() + 1, sv.end(), is_whitespace));
       sv = ustrview(result.end(), sv.end());
       return result;
     }
+
+    /// extracts `S ::= whitespace`
+    static constexpr ustrview extract_whitespace(ustrview& sv, const ustr& Raw) {
+      if (sv.empty() || !is_whitespace(sv.front())) throw exception(sv.begin(), Raw, "expected whitespace");
+      return extract_whitespace_internal(sv, Raw);
+    }
+
     /// extracts `Eq ::= S? '=' S?`
-    static constexpr ustrview extract_equal(ustrview& sv) {
-      auto it = std::ranges::find_if_not(sv, helper::is_whitespace);
-      if (it == sv.end() || *it++ != '=') return {};
-      ustrview result(sv.begin(), std::ranges::find_if_not(it, sv.end(), helper::is_whitespace));
+    static constexpr ustrview extract_equal(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected Eq");
+      auto it = std::ranges::find_if_not(sv, is_whitespace);
+      if (*it++ != '=') throw exception(it, sv, "expected '='");
+      ustrview result(sv.begin(), std::ranges::find_if_not(it, sv.end(), is_whitespace));
       sv = ustrview(result.end(), sv.end());
       return result;
     }
+
     /// extracts `Name ::= NameStartChar NameChar*`
     static constexpr ustrview extract_name(ustrview& sv, const ustr& Raw) {
-      if (sv.empty() || !helper::is_namestartchar(*sv.begin())) return {};
-      auto result = ustrview(sv.begin(), std::ranges::find_if_not(sv, helper::is_namechar));
-      sv          = ustrview(result.end(), sv.end());
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected Name");
+      auto it = sv.begin();
+      if (!is_namestartchar(*it)) throw exception(it, Raw, "expected NameStartChar");
+      ustrview result(it, std::ranges::find_if_not(it + 1, sv.end(), is_namechar));
+      sv = ustrview(result.end(), sv.end());
       return result;
     }
+
+    /// extracts `PEReference ::= '%' Name ';'`
+    static constexpr ustrview extract_pereference(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected PEReference");
+      auto it = sv.begin();
+      if (sv.front() != '%') throw exception(sv.begin(), Raw, "expected '%'");
+      sv.remove_prefix(1);
+      extract_name(sv, Raw);
+      if (sv.empty()) throw exception(sv.begin(), Raw, represent_unexpected_end());
+      if (sv.front() != ';') throw exception(sv.begin(), Raw, "expected ';'");
+      sv.remove_prefix(1);
+      return ustrview(it, sv.begin());
+    }
+
+    /// internal implementation of `extract_reference`; `!sv.empty() && sv.front() == '&'`
+    static constexpr ustrview extract_reference_internal(ustrview& sv, const ustr& Raw) {
+      auto it = sv.begin();
+      if (*++it == '#') {   // CharRef
+        if (*++it == 'x') { // hexadecimal
+          auto it2 = std::ranges::find_if_not(++it, sv.end(), is_xdigit);
+          if (it2 == it) throw exception(it2, Raw, "expected hexadecimal digit");
+          if (it2 == sv.end()) throw exception(it2, Raw, represent_unexpected_end());
+          if (*it2 != ';') throw exception(sv.begin(), Raw, "expected ';'");
+          ustrview result(sv.begin(), ++it2); // &#x123abc;
+          sv = ustrview(it2, sv.end());
+          return result;
+        } else { // decimal
+          auto it2 = std::ranges::find_if_not(it, sv.end(), is_digit);
+          if (it2 == it) throw exception(it2, Raw, "expected digit");
+          if (it2 == sv.end()) throw exception(it2, Raw, represent_unexpected_end());
+          if (*it2 != ';') throw exception(it2, Raw, "expected ';'");
+          ustrview result(sv.begin(), ++it2); // &#123;
+          sv = ustrview(it2, sv.end());
+          return result;
+        }
+      } else { // EntityRef
+        ustrview sv2(it, sv.end());
+        extract_name(sv2, Raw);
+        if (sv2.empty()) throw exception(sv2.begin(), Raw, represent_unexpected_end());
+        if (sv2.front() != ';') throw exception(sv2.begin(), Raw, "expected ';'");
+        ustrview result(sv.begin(), sv2.begin() + 1); // &xyz;
+        sv = ustrview(result.end(), sv.end());
+        return result;
+      }
+    }
+
+    /// extracts `Reference ::= EntityRef | CharRef`
+    static constexpr ustrview extract_reference(ustrview& sv, const ustr& Raw) {
+      if (sv.size() < 3) throw exception(sv.begin(), Raw, "expected Reference");
+      if (sv.front() != '&') throw exception(sv.begin(), Raw, "expected '&'");
+      return extract_reference_internal(sv, Raw);
+    }
+
     /// extracts `PubidLiteral ::= '"' PubidChar* '"' | "'" PubidChar* "'"`
     static constexpr ustrview extract_pubidliteral(ustrview& sv, const ustr& Raw) {
-      if (sv.empty()) throw exception(sv.begin(), Raw, "invalid PubidLiteral; PubidLiteral must start with '\"' or \"'\"");
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected PubidLiteral");
       uchar quote = sv.front();
-      if (quote != '"' && quote != '\'') throw exception(sv.begin(), Raw, "invalid PubidLiteral; PubidLiteral must start with '\"' or \"'\"");
+      if (quote != '"' && quote != '\'') throw exception(sv.begin(), Raw, "expected '\"' or \"'\"");
       sv.remove_prefix(1);
-      ustrview result(sv.begin(), std::ranges::find(sv, quote));
-      if (result.end() == sv.end()) throw exception(sv.begin(), Raw, "unclosed PubidLiteral; PubidLiteral must end with '\"' or \"'\"");
+      ustrview result(sv.begin(), std::ranges::find(sv, quote)); // PubidChar*
+      if (result.end() == sv.end()) throw exception(result.end(), Raw, represent_unexpected_end());
+      auto it = std::ranges::find_if_not(result, is_pubidchar);
+      if (it != result.end()) throw exception(it, Raw, format("found invalid PubidChar '{}'", unicode<char>(ustrview(it, it + 1))));
       sv = ustrview(result.end() + 1, sv.end());
       return result;
     }
+
     /// extracts `SystemLiteral ::= '"' [^"]* '"' | "'" [^']* "'"`
     static constexpr ustrview extract_systemliteral(ustrview& sv, const ustr& Raw) {
-      if (sv.empty()) throw exception(sv.begin(), Raw, "invalid SystemLiteral; SystemLiteral must start with '\"' or \"'\"");
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected SystemLiteral");
       uchar quote = sv.front();
-      if (quote != '"' && quote != '\'') throw exception(sv.begin(), Raw, "invalid SystemLiteral; SystemLiteral must start with '\"' or \"'");
+      if (quote != '"' && quote != '\'') throw exception(sv.begin(), Raw, "expected '\"' or \"'\"");
       sv.remove_prefix(1);
-      auto it = std::ranges::find(sv, quote);
-      if (it == sv.end()) throw exception(sv.begin(), Raw, "unclosed SystemLiteral; SystemLiteral must end with '\"' or \"'");
-      ustrview result(sv.begin(), it);
-      sv = ustrview(it + 1, sv.end());
+      ustrview result(sv.begin(), std::ranges::find(sv, quote)); // (Char* - (Char* 'quote' Char*))*
+      if (result.end() == sv.end()) throw exception(result.end(), Raw, represent_unexpected_end());
+      sv = ustrview(result.end() + 1, sv.end());
       return result;
     }
-    /// extracts `Comment`
-    static constexpr comment extract_comment(ustrview& sv, const ustr& Raw) {
-      if (!sv.starts_with(U"<!--"sv)) throw exception(sv.begin(), Raw, "invalid comment; comment must start with '<!--'");
-      auto comment_start = sv.begin() + 4;
-      if (comment_start == sv.end()) throw exception(sv.begin(), Raw, "unclosed comment");
-      if (*comment_start == '-') throw exception(sv.begin(), Raw, "invalid comment; comment must not start with '<!---'");
-      auto sr = std::ranges::search(ustrview(comment_start, sv.end()), U"-->"sv);
-      if (sr.empty()) throw exception(sv.begin(), Raw, "unclosed comment");
-      if (!std::ranges::search(ustrview(comment_start, sr.begin()), U"--"sv))
-        throw exception(sv.begin(), Raw, "invalid comment; comment must not contain '--'");
-      comment c{ustrview(comment_start, sr.begin())};
-      sv = ustrview(sr.end(), sv.end());
-      return c;
+
+    /// extracts `AttValue ::= '"' ([^<&"] | Reference)* '"" | "'" ([^<&'] | Reference)* "'"`
+    static constexpr ustrview extract_attvalue(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected AttValue");
+      uchar quote = sv.front();
+      if (quote != '"' && quote != '\'') throw exception(sv.begin(), Raw, "expected '\"' or \"'\"");
+      sv.remove_prefix(1);
+      auto first = sv.begin();
+      while (true) {
+        if (sv.empty()) throw exception(sv.begin(), Raw, represent_unexpected_end());
+        else if (sv.front() == quote) break;
+        else if (sv.front() == '&') {
+          try {
+            extract_reference_internal(sv, Raw);
+          } catch (const exception& e) { throw exception(sv.begin(), Raw, format("found '&' not for Reference")); }
+        } else if (sv.front() == '<') throw exception(sv.begin(), Raw, "found '<' in AttValue");
+        else sv.remove_prefix(1);
+      }
+      ustrview result(first, sv.begin()); // ([^<&"] | Reference)*
+      sv.remove_prefix(1);                // removes the closing quote
+      return result;
     }
-    /// extracts `PI`
-    static constexpr processing_instruction extract_pi(ustrview& sv, const ustr& Raw) {
-      if (!sv.starts_with(U"<?"sv)) throw exception(sv.begin(), Raw, "invalid PI; processing instruction must start with '<?'");
+
+    /// internal implementation of `extract_comment`; `!sv.empty() && sv.front() == '<'`
+    static constexpr comment extract_comment_internal(ustrview& sv, const ustr& Raw) {
+      if (!std::ranges::starts_with(ustrview(sv.begin() + 1, sv.end()), U"!--"sv))
+        throw exception(sv.begin(), Raw, "expected '<!--' for Comment");
+      auto it = sv.begin() + 4;
+      if (it == sv.end()) throw exception(it, Raw, represent_unexpected_end());
+      if (*it == '-') throw exception(sv.begin(), Raw, "found '-' after '<!--'");
+      auto sr = std::ranges::search(ustrview(it, sv.end()), U"--"sv);
+      if (sr.empty()) throw exception(sv.end(), Raw, represent_unexpected_end());
+      ustrview result(it, sr.begin());
+      sv = ustrview(sr.end() + 1, sv.end()); // removes the closing '-->'
+      if (sv.empty() || sv.front() != '>') throw exception(sv.begin(), Raw, "expected '>'");
+      return comment{result};
+    }
+
+    /// extracts `Comment ::= '<!--' ((Char* - '-') | ('-' (Char - '-')))* '-->'`
+    static constexpr comment extract_comment(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected Comment");
+      if (sv.front() != '<') throw exception(sv.begin(), Raw, "expected '<--' for Comment");
+      return extract_comment_internal(sv, Raw);
+    }
+
+    /// internal implementation of `extract_pi`; `!sv.empty() && sv.starts_with("<")`
+    static constexpr processing_instruction extract_pi_internal(ustrview& sv, const ustr& Raw) {
+      if (sv.size() < 3 || sv[1] != '?') throw exception(sv.begin(), Raw, "expected '<?' for PI");
       sv.remove_prefix(2);
-      auto target = helper::extract_name(sv, Raw);
+      auto target = extract_name(sv, Raw);
       if (target.size() == 3 && (target[0] & ~0x10) == 'X' && (target[1] & ~0x10) == 'M' && (target[2] & ~0x10) == 'L')
-        throw exception(sv.begin(), Raw, "invalid PI; PI target must not be 'XML'");
-      auto space = helper::extract_whitespaces(sv);
-      if (space.empty()) {
-        if (!sv.starts_with(U"?>"sv)) throw exception(sv.begin(), Raw, "invalid PI; processing instruction must end with '?>'");
-        sv.remove_prefix(2);
-        return processing_instruction{target, {}};
-      } else {
+        throw exception(sv.begin(), Raw, "found 'xml' as target of PI");
+      if (sv.empty()) throw exception(sv.begin(), Raw, represent_unexpected_end());
+      if (is_whitespace(sv.front())) {
+        extract_whitespace_internal(sv, Raw);
         auto sr = std::ranges::search(sv, U"?>"sv);
-        if (sr.empty()) throw exception(sv.begin(), Raw, "unclosed processing instruction");
+        if (sr.empty()) throw exception(sv.begin(), Raw, "missing '?>' for PI");
         if (sr.begin() == sv.begin()) return processing_instruction{target, {}};
         ustrview data{sv.begin(), sr.begin()};
-        if (!std::ranges::all_of(data, helper::is_character))
-          throw exception(sv.begin(), Raw, "invalid PI; processing instruction data must contain valid XML characters");
+        auto it = std::ranges::find_if_not(data, is_character);
+        if (it != data.end()) throw exception(it, Raw, format("found invalid character '&#x{:8x}' in PI data", uint32_t(*it))); // *it may be invisible
+        sv = ustrview(sr.end(), sv.end());
         return processing_instruction{target, data};
+      } else {
+        if (!sv.starts_with(U"?>"sv)) throw exception(sv.begin(), Raw, "expected '?>' for PI");
+        sv.remove_prefix(2);
+        return processing_instruction{target, {}};
       }
     }
-    /// extracts `Misc ::= Comment | PI | S`
-    static constexpr std::variant<comment, processing_instruction> extract_misc(ustrview& sv, const ustr& Raw) {
-      try {
-        auto sv2     = sv;
-        auto comment = extract_comment(sv2, Raw);
-        sv           = sv2;
-        return comment;
-      } catch (const exception&) {}
-      try {
-        auto pi = extract_pi(sv, Raw);
-        sv.remove_prefix(2); // remove '?>'
-        return pi;
-      } catch (const exception&) {}
-      auto whitespace = extract_whitespaces(sv);
-      return whitespace.empty() ? std::variant<comment, processing_instruction>{} : extract_misc(sv, Raw);
+
+    /// extracts `PI`
+    static constexpr processing_instruction extract_pi(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected PI");
+      if (sv.front() != '<') throw exception(sv.begin(), Raw, "expected '<?' for PI");
+      return extract_pi_internal(sv, Raw);
     }
+
+    /// extracts `Misc ::= Comment | PI | S`; returns the first Comment or PI with skipping whitespace
+    static constexpr std::variant<comment, processing_instruction> extract_misc(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected Misc");
+      if (sv.front() == '<') {
+        try {
+          auto sv2    = sv;
+          auto result = extract_pi_internal(sv2, Raw);
+          sv          = sv2;
+          return result;
+        } catch (const exception&) {}
+        try {
+          auto sv2    = sv;
+          auto result = extract_comment_internal(sv2, Raw);
+          sv          = sv2;
+          return result;
+        } catch (const exception&) {}
+        throw exception(sv.begin(), Raw, "expected Comment or PI");
+      } else if (is_whitespace(sv.front())) {
+        extract_whitespace_internal(sv, Raw);
+        return extract_misc(sv, Raw);
+      } else throw exception(sv.begin(), Raw, "expected Misc");
+    }
+
+    /// internal implementation of `extract_cdsect`; !sv.empty() && sv.front() == '<'
+    static constexpr ustrview extract_cdsect_internal(ustrview& sv, const ustr& Raw) {
+      if (!std::ranges::starts_with(ustrview(sv.begin() + 1, sv.end()), U"![CDATA["sv))
+        throw exception(sv.begin(), Raw, "expected '<![CDATA['");
+      auto it = sv.begin() + 9;
+      auto sr = std::ranges::search(ustrview(it, sv.end()), U"]]>"sv);
+      if (sr.empty()) throw exception(it, Raw, "missing ']]>'");
+      auto it = std::ranges::find_if_not(it, sr.begin(), is_character);
+      if (it != sr.begin()) throw exception(it, Raw, format("unexpected '&#x{:8x}' in CDSect", uint32_t(*it))); // *it may be invisible
+      ustrview result(sv.begin(), sr.end());
+      sv = ustrview(sr.end(), sv.end());
+      return result;
+    }
+
+    /// extracts `CDSect ::= '<![CDATA[' (Char* - (Char* ']]>' Char*)) ']]>'
+    static constexpr ustrview extract_cdsect(ustrview& sv, const ustr& Raw) {
+      if (sv.empty()) throw exception(sv.begin(), Raw, "expected CDSect");
+      if (sv.front() != '<') throw exception(sv.begin(), Raw, "expected '<![CDATA[' for CDSect");
+      return extract_cdsect_internal(sv, Raw);
+    }
+
     /// extracts `doctypedecl ::= 'DOCTYPE' S? Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'`
     static constexpr doctypedecl extract_dtd(ustrview& sv, const ustr& Raw) {
+      if (!sv.starts_with(U"<!DOCTYPE"sv)) throw exception(sv.begin(), Raw, "expected doctypedecl");
       doctypedecl dtd;
-      if (!sv.starts_with(U"<!DOCTYPE"sv)) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration");
       sv.remove_prefix(9);
-      auto whitespace = helper::extract_whitespaces(sv);
+      extract_whitespace(sv, Raw);
+      dtd.name = extract_name(sv, Raw);
+      if (sv.empty()) throw exception(sv.begin(), Raw, represent_unexpected_end());
+      if (is_whitespace(sv.front())) extract_whitespace_internal(sv, Raw);
+
+
+      auto whitespace = helper::extract_whitespace(sv, Raw);
       if (whitespace.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; whitespace is required");
       dtd.name = helper::extract_name(sv, Raw);
       if (dtd.name.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; name is required");
-      whitespace = helper::extract_whitespaces(sv);
+      whitespace = helper::extract_whitespace(sv);
       if (!whitespace.empty()) {
         if (sv.starts_with(U"'PUBLIC'"sv)) {
           sv.remove_prefix(8);
-          whitespace = helper::extract_whitespaces(sv);
+          whitespace = helper::extract_whitespace(sv);
           if (whitespace.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; whitespace is required");
           dtd.fri    = helper::extract_pubidliteral(sv, Raw);
-          whitespace = helper::extract_whitespaces(sv);
+          whitespace = helper::extract_whitespace(sv);
           if (whitespace.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; whitespace is required");
           dtd.uri = helper::extract_systemliteral(sv, Raw);
         } else if (sv.starts_with(U"'SYSTEM'"sv)) {
           sv.remove_prefix(8);
-          whitespace = helper::extract_whitespaces(sv);
+          whitespace = helper::extract_whitespace(sv);
           if (whitespace.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; whitespace is required");
           dtd.fri = helper::extract_pubidliteral(sv, Raw);
         } else throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; unrecognized keyword");
-        helper::extract_whitespaces(sv);
+        helper::extract_whitespace(sv);
       }
       if (sv.empty()) throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration");
       if (sv.front() == '[') throw exception(sv.begin(), Raw, "internal subset is not supported");
       if (sv.front() != '>') throw exception(sv.begin(), Raw, "invalid DOCTYPE declaration; '>' is required");
       sv.remove_prefix(1);
+    }
+    /// extracts elements
+    static constexpr element extract_element(ustrview& sv, const ustr& Raw) {
+      if (sv.empty() || sv.front() != '<') throw exception(sv.begin(), Raw, "invalid element; '<' is required");
+      sv.remove_prefix(1);
+      auto name = helper::extract_name(sv, Raw);
+      element elem{name};
+      auto spaces = helper::extract_whitespace(sv);
+      if (sv.starts_with(U"/>"sv)) {
+        sv.remove_prefix(2);
+        return elem;
+      }
+      while (true) {
+        if (sv.empty()) throw exception(sv.begin(), Raw, "invalid element");
+        else if (sv.front() == '>') {
+          sv.remove_prefix(1);
+          break;
+        } else if (sv.starts_with(U"/>"sv)) {
+          sv.remove_prefix(2);
+          return elem;
+        } else if (spaces.empty()) throw exception(sv.begin(), Raw, "invalid element; whitespace is expected before attributes");
+        auto attr_name = helper::extract_name(sv, Raw);
+        if (helper::extract_equal(sv).empty()) throw exception(sv.begin(), Raw, "invalid attribute; '=' is required");
+        auto attr_value = helper::extract_attvalue(sv, Raw);
+        elem.attributes.emplace_back(attr_name, attr_value);
+        spaces = helper::extract_whitespace(sv);
+      }
+      bool next_to_text = false;
+      while (true) {
+        if (sv.empty()) throw exception(sv.begin(), Raw, "invalid element");
+        if (sv.front() == '<') { // CDSect, PI, Comment or element
+          try {
+            auto sv2  = sv;
+            auto test = helper::extract_cdsect(sv2, Raw);
+            sv        = sv2;
+            if (next_to_text) std::get<text>(elem.children.back()) = text(ustrview(std::get<text>(elem.children.back()).data.begin(), test.end()));
+            else elem.children.emplace_back(text(test));
+            continue;
+          }
+        }
+      }
     }
   };
   double version{};
@@ -252,8 +468,8 @@ private:
     // analyzes XML declaration
     if (std::ranges::starts_with(sv, U"<?xml"sv)) {
       sv.remove_prefix(5);
-      auto whitespaces = helper::extract_whitespaces(sv);
-      if (whitespaces.empty()) throw exception(sv.begin(), raw, "whitespaces are required after '<?xml'");
+      auto whitespace = helper::extract_whitespace(sv);
+      if (whitespace.empty()) throw exception(sv.begin(), raw, "whitespace are required after '<?xml'");
       if (!sv.starts_with(U"version"sv)) throw exception(sv.begin(), raw, "'version' is required");
       sv.remove_prefix(7);
       auto eq = helper::extract_equal(sv);
@@ -265,7 +481,7 @@ private:
       auto version_number_end = std::ranges::find_if_not(sv.begin() + 1, sv.end(), helper::is_digit);
       if (version_number_end == sv.end()) throw exception(version_number_end, raw, "invalid xml document");
       version = stof(ustrview(version_number_start, version_number_end));
-      helper::extract_whitespaces(sv);
+      helper::extract_whitespace(sv);
       if (sv.starts_with(U"encoding"sv)) {
         sv.remove_prefix(8);
         eq = helper::extract_equal(sv);
@@ -278,7 +494,7 @@ private:
         if (encoding_end == sv.end() || *encoding_end != quote) throw exception(sv.begin(), raw, "invalid encoding value");
         encoding = ustrview(encoding_start, encoding_end);
         sv       = ustrview(encoding_end + 1, sv.end());
-        helper::extract_whitespaces(sv);
+        helper::extract_whitespace(sv);
       }
       if (sv.starts_with(U"standalone"sv)) {
         sv.remove_prefix(10);
@@ -292,7 +508,7 @@ private:
         else if (sv.starts_with(U"no"sv) && !(sv.remove_prefix(2), sv).empty() && sv.front() == quote) standalone = false;
         else throw exception(sv.begin(), raw, "invalid standalone value");
         sv.remove_prefix(1);
-        helper::extract_whitespaces(sv);
+        helper::extract_whitespace(sv);
       }
       if (!sv.starts_with(U"?>"sv)) throw exception(sv.begin(), raw, "invalid XML declaration");
       sv.remove_prefix(2);
@@ -314,7 +530,7 @@ private:
 //   if (!std::ranges::starts_with(sv, U"<!DOCTYPE"sv)) return 0;
 //   sv.remove_prefix(8);
 //   auto it = std::ranges::find_if_not(sv, is_whitespace);
-//   if (it == sv.begin()) throw exception(sv.begin(), raw, "Invalid DOCTYPE declaration; whitespaces expected");
+//   if (it == sv.begin()) throw exception(sv.begin(), raw, "Invalid DOCTYPE declaration; whitespace expected");
 //   if (it == sv.end()) throw exception(sv.begin(), raw, "Invalid DOCTYPE declaration");
 //   if (!is_namestartchar(*it)) throw exception(sv.begin(), raw, "Invalid DOCTYPE declaration; invalid root element");
 //   auto root_element_start = it++;
@@ -955,7 +1171,7 @@ private:
 // //   return c == 0x9 || c == 0xa || c == 0xd || (0x20 <= c && c <= 0xd7ff) || (0xe000 <= c && (c & 0xfffe) != 0xfffe);
 // // }
 
-// // /// returns whitespaces and removes them from the input string
+// // /// returns whitespace and removes them from the input string
 // // constexpr ustrview skip_space(ustrview& s, const ustrview& Document) noexcept {
 // //   constexpr auto is_space = [](const uchar c) noexcept { return (c == 0x20 || c == 0x9 || c == 0xd || c == 0xa); };
 // //   auto it                 = s.begin();
